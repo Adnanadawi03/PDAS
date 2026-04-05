@@ -93,7 +93,8 @@
 <body>
 
 <nav>
-  <a class="nav-logo" href="index.html">PDAS<span>.</span></a>
+  <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
+  <div style="display:flex;align-items:center;gap:0.75rem;"><button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button></div>
 </nav>
 
 <div class="page-wrap">
@@ -101,7 +102,7 @@
   <div class="bg-glow"></div>
   <div class="auth-box">
     <div class="auth-logo">PDAS</div>
-    <div class="auth-tagline">Phishing Detection & Analysis System</div>
+    <div class="auth-tagline">Phishing Detection & Awareness System</div>
 
     <div class="tabs">
       <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
@@ -112,14 +113,15 @@
     <div class="login-form active" id="loginForm">
       <div class="form-group">
         <label>EMAIL ADDRESS</label>
-        <input type="email" placeholder="you@example.com">
+        <input type="email" placeholder="you@example.com" id="loginEmail">
       </div>
       <div class="form-group">
         <label>PASSWORD</label>
         <input type="password" placeholder="••••••••" id="loginPw">
       </div>
-      <div class="forgot"><a href="#">Forgot password?</a></div>
-      <button class="submit-btn" onclick="window.location='dashboard.html'">Sign In →</button>
+      <div class="forgot"><a href="#" onclick="forgotPassword()">Forgot password?</a></div>
+      <div id="loginError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+      <button class="submit-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
       <div class="divider"><span>or continue with</span></div>
       <button class="oauth-btn">
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.48A4.84 4.84 0 014.5 9a4.84 4.84 0 01.25-1.52V5.4H1.84A8 8 0 001 9c0 1.3.31 2.52.84 3.6l2.66-2.12z"/><path fill="#EA4335" d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.54-2.54A8 8 0 001.84 5.41L4.5 7.48A4.77 4.77 0 018.98 3.58z"/></svg>
@@ -131,11 +133,11 @@
     <div class="signup-form" id="signupForm">
       <div class="form-group">
         <label>FULL NAME</label>
-        <input type="text" placeholder="Your full name">
+        <input type="text" placeholder="Your full name" id="signupName">
       </div>
       <div class="form-group">
         <label>EMAIL ADDRESS</label>
-        <input type="email" placeholder="you@example.com">
+        <input type="email" placeholder="you@example.com" id="signupEmail">
       </div>
       <div class="form-group">
         <label>PASSWORD</label>
@@ -150,9 +152,11 @@
       </div>
       <div class="form-group">
         <label>CONFIRM PASSWORD</label>
-        <input type="password" placeholder="••••••••">
+        <input type="password" placeholder="••••••••" id="signupConfirm">
       </div>
-      <button class="submit-btn" onclick="window.location='dashboard.html'">Create Account →</button>
+      <div id="signupError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+      <div id="signupSuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+      <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
       <div class="divider"><span>or continue with</span></div>
       <button class="oauth-btn">
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.48A4.84 4.84 0 014.5 9a4.84 4.84 0 01.25-1.52V5.4H1.84A8 8 0 001 9c0 1.3.31 2.52.84 3.6l2.66-2.12z"/><path fill="#EA4335" d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.54-2.54A8 8 0 001.84 5.41L4.5 7.48A4.77 4.77 0 018.98 3.58z"/></svg>
@@ -162,13 +166,26 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ── Supabase ──
+const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+_supabase.auth.getSession().then(({ data }) => {
+  if (data.session) window.location.href = 'dashboard.html';
+});
+
+// ── Tab switching ──
 function switchTab(tab) {
   document.getElementById('loginForm').classList.toggle('active', tab === 'login');
   document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
 }
+
+// ── Password strength ──
 function checkStrength(pw) {
   const segs = [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
   const hint = document.getElementById('pwHint');
@@ -182,6 +199,75 @@ function checkStrength(pw) {
   segs.forEach((s,i) => { s.style.background = i < score ? colors[score-1] : 'rgba(255,255,255,0.07)'; });
   if (score > 0) hint.textContent = labels[score-1] + ' password';
 }
+
+// ── Auth ──
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPw').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  const { error } = await _supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = error.message; errEl.style.display = 'block';
+    btn.textContent = 'Sign In →'; btn.disabled = false;
+  } else {
+    window.location.href = 'dashboard.html';
+  }
+}
+
+async function handleSignup() {
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPw').value;
+  const confirm = document.getElementById('signupConfirm').value;
+  const errEl = document.getElementById('signupError');
+  const sucEl = document.getElementById('signupSuccess');
+  const btn = document.getElementById('signupBtn');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+  if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
+  if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Creating account...'; btn.disabled = true;
+  const { error } = await _supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
+  if (error) {
+    errEl.textContent = error.message; errEl.style.display = 'block';
+    btn.textContent = 'Create Account →'; btn.disabled = false;
+  } else {
+    sucEl.textContent = '✓ Account created! Check your email to confirm, then sign in.';
+    sucEl.style.display = 'block';
+    btn.textContent = 'Create Account →'; btn.disabled = false;
+  }
+}
+
+async function forgotPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const errEl = document.getElementById('loginError');
+  if (!email) { errEl.textContent = 'Enter your email above first.'; errEl.style.display = 'block'; return; }
+  const { error } = await _supabase.auth.resetPasswordForEmail(email);
+  errEl.style.color = error ? '#ef4444' : '#22c55e';
+  errEl.textContent = error ? error.message : '✓ Password reset email sent!';
+  errEl.style.display = 'block';
+}
+
+// ── Theme ──
+function toggleTheme() {
+  const isDark = !document.body.classList.contains('light');
+  document.body.classList.toggle('light', isDark);
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('pdas-theme', isDark ? 'light' : 'dark');
+}
+(function() {
+  if (localStorage.getItem('pdas-theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = '☀️';
+    });
+  }
+})();
 </script>
 </body>
 </html>

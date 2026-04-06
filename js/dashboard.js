@@ -1,3 +1,36 @@
+const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Auth guard: redirect to login if not logged in ──
+async function initDashboard() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Show user info
+  const user = session.user;
+  const name = user.user_metadata?.full_name || user.email.split('@')[0];
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const email = user.email;
+
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userEmail').textContent = email;
+  document.getElementById('userAvatar').textContent = initials;
+
+  renderTable();
+  renderBarChart();
+}
+
+// ── Logout ──
+async function logout() {
+  await _supabase.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ── Scan table ──
 const scans = [
   { subject: 'Urgent: Verify your account', sender: 'admin@secure-login.xyz', type: 'Email', risk: 'HIGH', time: '2m ago' },
   { subject: 'Your package is ready', sender: 'noreply@fedex-track.net', type: 'Email', risk: 'HIGH', time: '5m ago' },
@@ -45,7 +78,4 @@ function renderBarChart() {
   `).join('');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderTable();
-  renderBarChart();
-});
+document.addEventListener('DOMContentLoaded', initDashboard);

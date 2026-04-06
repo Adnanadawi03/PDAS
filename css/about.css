@@ -1,0 +1,51 @@
+/* ABOUT HERO */
+.about-hero { padding: 9rem 6% 5rem; text-align: center; position: relative; overflow: hidden; border-bottom: 1px solid var(--border); }
+.hero-glow { position: absolute; width: 700px; height: 400px; border-radius: 50%; background: radial-gradient(ellipse,rgba(162,89,255,0.07) 0%,transparent 70%); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+.grid-bg { position: absolute; inset: 0; opacity: 0.025; background-image: linear-gradient(var(--accent3) 1px,transparent 1px),linear-gradient(90deg,var(--accent3) 1px,transparent 1px); background-size: 60px 60px; }
+.about-hero .tag { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; color: var(--accent3); text-transform: uppercase; margin-bottom: 0.8rem; }
+.about-hero h1 { font-size: clamp(2.5rem,6vw,4.5rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.2rem; }
+.about-hero p { color: var(--muted); max-width: 580px; margin: 0 auto; font-size: 1.05rem; font-weight: 300; }
+
+section { padding: 5rem 6%; }
+
+/* MISSION */
+.mission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+@media(max-width:750px) { .mission-grid { grid-template-columns: 1fr; gap: 2rem; } }
+.section-body { color: var(--muted); font-size: 0.95rem; line-height: 1.8; }
+.mission-right { display: flex; flex-direction: column; gap: 1rem; }
+.mission-stat { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 1rem; transition: border-color 0.2s; }
+.mission-stat:hover { border-color: rgba(0,229,255,0.2); }
+.mission-stat-icon { font-size: 1.5rem; }
+.mission-stat-num { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+.mission-stat-label { color: var(--muted); font-size: 0.82rem; }
+
+/* TECH */
+.tech-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 1.2rem; }
+.tech-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.8rem; transition: all 0.2s; }
+.tech-card:hover { border-color: rgba(0,229,255,0.2); transform: translateY(-3px); }
+.tech-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+.tech-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.tech-card p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+
+/* TIMELINE */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border); border-radius: 2px; }
+.timeline-item { position: relative; padding-bottom: 2.5rem; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot { position: absolute; left: -2.4rem; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); transition: border-color 0.2s; }
+.timeline-item:hover .timeline-dot { border-color: var(--accent); }
+.timeline-label { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--accent3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem; }
+.timeline-item h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.timeline-item p { color: var(--muted); font-size: 0.88rem; }
+
+/* TEAM */
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 1.5rem; }
+.team-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; text-align: center; }
+.team-avatar { width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; }
+.team-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; }
+.team-card .role { color: var(--muted); font-size: 0.82rem; }
+
+/* CTA */
+.cta-section { background: var(--bg2); border-radius: 24px; padding: 4rem; text-align: center; border: 1px solid var(--border); }
+.cta-section h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; }
+.cta-section p { color: var(--muted); margin-bottom: 2rem; }

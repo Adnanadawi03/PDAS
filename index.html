@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Phishing Detection & Awareness System</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#threats">Threat Levels</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:0.75rem;">
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <a class="nav-cta" href="login.html">Sign In →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-badge fade-up"><span class="badge-dot"></span> AI-Powered Email Security</div>
+    <h1 class="fade-up delay-1">Detect <span class="accent">Phishing</span> Before It<br>Reaches <span class="accent2">You</span></h1>
+    <p class="hero-desc fade-up delay-2">PDAS scans every email and attachment in real-time, classifies threats into 3 risk levels, and gives you full visibility through a powerful dashboard.</p>
+    <div class="hero-btns fade-up delay-3">
+      <a href="#download" class="btn-primary">⬇ Download Extension</a>
+      <a href="dashboard.html" class="btn-outline">View Dashboard</a>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num">96.0%</div><div class="stat-label">Detection Accuracy</div></div>
+  <div class="stat-item"><div class="stat-num">&lt;3.0s</div><div class="stat-label">Scan Time</div></div>
+  <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">Risk Levels</div></div>
+  <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-label">Active Protection</div></div>
+</div>
+
+<section id="how">
+  <div class="section-tag">How it works</div>
+  <h2 class="section-title">Smart Protection in 4 Steps</h2>
+  <p class="section-sub">PDAS works silently in your browser, scanning every incoming email and file for phishing indicators.</p>
+  <div class="steps">
+    <div class="step-card"><div class="step-num">01</div><div class="step-icon">📧</div><h3>Email Interception</h3><p>The extension hooks into your email client and intercepts incoming messages in real time before you open them.</p></div>
+    <div class="step-card"><div class="step-num">02</div><div class="step-icon">🔬</div><h3>Deep Analysis</h3><p>Links, attachments, sender metadata, and body content are scanned using multi-layer detection algorithms.</p></div>
+    <div class="step-card"><div class="step-num">03</div><div class="step-icon">🎯</div><h3>Risk Classification</h3><p>Every email is assigned a risk level: Low, Medium, or High — with a detailed breakdown of detected threats.</p></div>
+    <div class="step-card"><div class="step-num">04</div><div class="step-icon">📊</div><h3>Dashboard Insights</h3><p>Access your personalized dashboard to monitor all scanned items, trends, and threat reports over time.</p></div>
+  </div>
+</section>
+
+<section id="threats" style="background:var(--bg2);">
+  <div class="section-tag">Threat Classification</div>
+  <h2 class="section-title">3 Levels of Risk</h2>
+  <p class="section-sub">Every scan results in a clear, actionable risk classification so you always know what you're dealing with.</p>
+  <div class="levels">
+    <div class="level-card low"><div class="level-badge">LOW RISK</div><h3>Safe to Open</h3><p>No significant phishing indicators found. The email passes all safety checks and is considered trustworthy.</p></div>
+    <div class="level-card med"><div class="level-badge">MEDIUM RISK</div><h3>Proceed with Caution</h3><p>Some suspicious patterns detected. The email may contain misleading links or spoofed sender information.</p></div>
+    <div class="level-card high"><div class="level-badge">HIGH RISK</div><h3>Dangerous — Block</h3><p>Clear phishing indicators found. This email is likely a coordinated attack and should be blocked immediately.</p></div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="download-section">
+    <div class="download-glow"></div>
+    <div style="position:relative;">
+      <div class="section-tag" style="text-align:center;">Get Protected Now</div>
+      <h2>Install the PDAS Extension</h2>
+      <p>Free browser extension. Works with Gmail, Outlook, and more. Setup takes under 2 minutes.</p>
+      <a href="login.html" class="btn-primary" style="display:inline-flex;margin-bottom:1rem;">⬇ Download for Chrome</a>
+      <div class="download-meta">
+        <div class="dl-meta-item">✓ <span>Free to use</span></div>
+        <div class="dl-meta-item">✓ <span>No data stored</span></div>
+        <div class="dl-meta-item">✓ <span>Open source</span></div>
+        <div class="dl-meta-item">✓ <span>Privacy first</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="logo">PDAS</div>
+  <p>© 2025 Phishing Detection & Awareness System. Graduation Project.</p>
+  <nav>
+    <a href="about.html">About</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="login.html">Login</a>
+  </nav>
+</footer>
+
+<script src="js/theme.js"></script>
+</body>
+</html>

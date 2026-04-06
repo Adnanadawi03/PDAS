@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Dashboard</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">PDAS<span>.</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📧</span> Email Scans</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📎</span> File Scans</a>
+    <a href="#" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+    <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Website</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar">A</div>
+      <div>
+        <div class="user-name">Admin User</div>
+        <div class="user-role">Security Analyst</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h1 class="page-title">Security Dashboard</h1>
+      <div class="page-sub">Last updated: Today at 14:33 — 247 emails scanned</div>
+    </div>
+    <div class="topbar-right">
+      <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      <div class="notif-btn"><span>🔔</span><div class="notif-dot"></div></div>
+      <button class="scan-btn">⚡ Run Scan</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card total"><div class="stat-label">Total Scanned</div><div class="stat-num total">1,284</div><div class="stat-change up">↑ 12% this week</div></div>
+    <div class="stat-card safe"><div class="stat-label">Safe (Low Risk)</div><div class="stat-num safe">1,021</div><div class="stat-change">79.5% of total</div></div>
+    <div class="stat-card warn"><div class="stat-label">Caution (Medium)</div><div class="stat-num warn">189</div><div class="stat-change up">↑ 5% vs last week</div></div>
+    <div class="stat-card danger"><div class="stat-label">Dangerous (High)</div><div class="stat-num danger">74</div><div class="stat-change down">↓ 3% vs last week</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Weekly Scan Activity <span>Last 7 days</span></div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Threat Distribution <span>All time</span></div>
+      <div class="donut-wrap">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="18"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#22c55e" stroke-width="18" stroke-dasharray="200 251" stroke-dashoffset="-5" stroke-linecap="round"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#f59e0b" stroke-width="18" stroke-dasharray="37 251" stroke-dashoffset="-210" stroke-linecap="round"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#ef4444" stroke-width="18" stroke-dasharray="14 251" stroke-dashoffset="-251" stroke-linecap="round"/>
+          <text x="55" y="50" text-anchor="middle" fill="#e8eaf0" font-family="Syne,sans-serif" font-size="14" font-weight="700">74</text>
+          <text x="55" y="64" text-anchor="middle" fill="#7a8499" font-size="9">threats</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Low Risk — 79.5%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Medium Risk — 14.7%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> High Risk — 5.8%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3-1">
+    <div class="card">
+      <div class="card-title">Recent Scans <span>Showing 8 of 247</span></div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+        <button class="filter-btn" onclick="setFilter(this,'HIGH')">High Risk</button>
+        <button class="filter-btn" onclick="setFilter(this,'MEDIUM')">Medium</button>
+        <button class="filter-btn" onclick="setFilter(this,'LOW')">Low</button>
+      </div>
+      <table class="scan-table">
+        <thead><tr><th>Subject</th><th>Sender</th><th>Type</th><th>Risk</th><th>Time</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Live Activity</div>
+      <div class="activity-list">
+        <div class="activity-item"><div class="act-icon high">🚨</div><div><div class="act-text">High-risk phishing blocked from <b>noreply@secure-verify.xyz</b></div><div class="act-time">2 min ago</div></div></div>
+        <div class="activity-item"><div class="act-icon med">⚠️</div><div><div class="act-text">Suspicious link detected in email from <b>billing@paypa1.com</b></div><div class="act-time">8 min ago</div></div></div>
+        <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Email from <b>support@github.com</b> passed all checks</div><div class="act-time">15 min ago</div></div></div>
+        <div class="activity-item"><div class="act-icon high">🚨</div><div><div class="act-text">Malicious attachment (.exe) blocked in PDF disguise</div><div class="act-time">22 min ago</div></div></div>
+        <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Newsletter from <b>newsletter@medium.com</b> cleared</div><div class="act-time">41 min ago</div></div></div>
+        <div class="activity-item"><div class="act-icon med">⚠️</div><div><div class="act-text">Spoofed sender detected — impersonating PayPal</div><div class="act-time">1 hr ago</div></div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/theme.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

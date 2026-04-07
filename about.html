@@ -9,6 +9,20 @@
 </head>
 <body>
 
+
+<div class="mobile-menu" id="mobileMenu-about">
+  <div class="mobile-menu-header">
+    <div class="mobile-menu-logo">PDAS</div>
+    <button class="mobile-close" onclick="closeMobileMenu('about')">✕</button>
+  </div>
+  <nav class="mobile-nav-links">
+    <a href="index.html" onclick="closeMobileMenu('about')">Home</a>
+    <a href="about.html" onclick="closeMobileMenu('about')">About</a>
+    <a href="dashboard.html" onclick="closeMobileMenu('about')">Dashboard</a>
+    
+  </nav>
+  <div class="mobile-menu-footer"><a href="login.html" class="mobile-cta">Sign In →</a></div>
+</div>
 <header>
 <nav>
   <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
@@ -18,7 +32,7 @@
     <li><a href="dashboard.html">Dashboard</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:0.75rem;">
-    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <button class="hamburger" onclick="openMobileMenu('about')" title="Menu">☰</button><button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
     <a class="nav-cta" href="login.html">Sign In →</a>
   </div>
 </nav>
@@ -109,5 +123,15 @@
 </footer>
 
 <script src="js/theme.js"></script>
+<script>
+function openMobileMenu(id) {
+  document.getElementById('mobileMenu-' + id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu(id) {
+  document.getElementById('mobileMenu-' + id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+</script>
 </body>
 </html>

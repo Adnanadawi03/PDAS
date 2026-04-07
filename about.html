@@ -29,7 +29,7 @@
   <ul class="nav-links">
     <li><a href="index.html">Home</a></li>
     <li><a href="about.html" class="active">About</a></li>
-    <li><a href="dashboard.html">Dashboard</a></li>
+    <li><a href="dashboard.html" onclick="checkAuthNav(event)">Dashboard</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <button class="hamburger" onclick="openMobileMenu('about')" title="Menu">☰</button><button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
@@ -117,7 +117,7 @@
   <p>© 2025 Phishing Detection & Awareness System. Graduation Project.</p>
   <nav>
     <a href="index.html">Home</a>
-    <a href="dashboard.html">Dashboard</a>
+    <a href="dashboard.html" onclick="checkAuthNav(event)">Dashboard</a>
     <a href="login.html">Login</a>
   </nav>
 </footer>
@@ -131,6 +131,15 @@ function openMobileMenu(id) {
 function closeMobileMenu(id) {
   document.getElementById('mobileMenu-' + id).classList.remove('open');
   document.body.style.overflow = '';
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const _sb = window.supabase.createClient('https://tzujckucxxmbxkpfkngn.supabase.co','sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1');
+async function checkAuthNav(e) {
+  e.preventDefault();
+  const { data } = await _sb.auth.getSession();
+  window.location.href = data.session ? 'dashboard.html' : 'login.html?msg=signin';
 }
 </script>
 </body>

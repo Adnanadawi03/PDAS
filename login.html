@@ -9,11 +9,24 @@
 </head>
 <body>
 
+
+<div class="mobile-menu" id="mobileMenu-login">
+  <div class="mobile-menu-header">
+    <div class="mobile-menu-logo">PDAS</div>
+    <button class="mobile-close" onclick="closeMobileMenu('login')">✕</button>
+  </div>
+  <nav class="mobile-nav-links">
+    <a href="index.html" onclick="closeMobileMenu('login')">Home</a>
+    <a href="about.html" onclick="closeMobileMenu('login')">About</a>
+    
+  </nav>
+  <div class="mobile-menu-footer"></div>
+</div>
 <header>
 <nav>
   <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
   <div style="display:flex;align-items:center;gap:0.75rem;">
-    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <button class="hamburger" onclick="openMobileMenu('login')" title="Menu">☰</button><button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
   </div>
 </nav>
 </header>
@@ -80,5 +93,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/theme.js"></script>
 <script src="js/login.js"></script>
+<script>
+function openMobileMenu(id) {
+  document.getElementById('mobileMenu-' + id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu(id) {
+  document.getElementById('mobileMenu-' + id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+</script>
 </body>
 </html>

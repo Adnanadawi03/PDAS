@@ -25,6 +25,7 @@ h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
 body.light {
   --bg: #f4f6fa; --bg2: #eaecf2; --bg3: #e0e3ec; --card: #ffffff;
   --text: #0f1218; --muted: #6b7280; --border: rgba(0,0,0,0.09);
+  background: #f4f6fa;
 }
 
 /* NAV */

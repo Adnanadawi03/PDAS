@@ -139,3 +139,12 @@ body { display: flex; min-height: 100vh; }
 @media(max-width: 420px) {
   .stats-grid { grid-template-columns: 1fr; }
 }
+
+.signout-btn {
+  margin: 0.75rem 1.5rem 0;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+  color: #ef4444; padding: 0.6rem; border-radius: 8px; cursor: pointer;
+  font-family: "DM Sans", sans-serif; font-size: 0.85rem;
+  width: calc(100% - 3rem); transition: all 0.2s;
+}
+.signout-btn:hover { background: rgba(239,68,68,0.2); }

@@ -34,8 +34,9 @@
 <div class="page-wrap">
   <div class="grid-bg"></div>
   <div class="bg-glow"></div>
-  <div id="authBanner" style="display:none;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);color:#00e5ff;padding:0.8rem 1rem;border-radius:10px;font-size:0.88rem;margin-bottom:1rem;text-align:center;max-width:440px;width:100%;"></div>
-  <div class="auth-box">
+  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px;gap:1rem;">
+  <div id="authBanner" style="display:none;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);color:#00e5ff;padding:0.8rem 1rem;border-radius:10px;font-size:0.88rem;text-align:center;width:100%;"></div>
+  <div class="auth-box" style="width:100%;">
     <div class="auth-logo">PDAS</div>
     <div class="auth-tagline">Phishing Detection &amp; Awareness System</div>
 
@@ -94,6 +95,7 @@
       <div id="signupSuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
       <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
     </div>
+  </div>
   </div>
 </div>
 

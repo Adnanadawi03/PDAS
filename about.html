@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -9,7 +10,6 @@
 </head>
 <body>
 
-
 <div class="mobile-menu" id="mobileMenu-about">
   <div class="mobile-menu-header">
     <div class="mobile-menu-logo">PDAS</div>
@@ -19,9 +19,16 @@
     <a href="index.html" onclick="closeMobileMenu('about')">Home</a>
     <a href="about.html" onclick="closeMobileMenu('about')">About</a>
     <a href="dashboard.html" onclick="closeMobileMenu('about')">Dashboard</a>
-    
+
   </nav>
-  <div class="mobile-menu-footer"><a href="login.html" class="mobile-cta">Sign In →</a></div>
+  <div class="mobile-menu-footer">
+  <div id="mobileUserSection" style="display:none;margin-bottom:1rem;padding:1rem;background:var(--bg2);border-radius:10px;">
+    <div class="mobile-user-name" style="font-weight:700;font-size:1rem;"></div>
+    <div class="mobile-user-email" style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;"></div>
+    <button onclick="navLogout()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;width:100%;">Sign Out</button>
+  </div>
+  <a href="login.html" class="mobile-cta" id="mobileSignIn">Sign In →</a>
+</div>
 </div>
 <header>
 <nav>
@@ -32,8 +39,20 @@
     <li><a href="dashboard.html" onclick="checkAuthNav(event)">Dashboard</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:0.75rem;">
-    <button class="hamburger" onclick="openMobileMenu('about')" title="Menu">☰</button><button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-    <a class="nav-cta" href="login.html">Sign In →</a>
+    <button class="hamburger" onclick="openMobileMenu('about')" title="Menu">☰</button>
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <a class="nav-cta" id="navSignIn" href="login.html">Sign In →</a>
+    <div class="nav-user" id="navUser">
+      <div class="nav-user-avatar" id="navUserAvatar">?</div>
+      <span class="nav-user-name" id="navUserName"></span>
+      <span class="nav-user-chevron">▾</span>
+      <div class="nav-dropdown">
+        <a href="dashboard.html" class="nav-dropdown-item">📊 Dashboard</a>
+        <a href="settings.html" class="nav-dropdown-item">⚙️ Settings</a>
+        <div class="nav-dropdown-sep"></div>
+        <button class="nav-dropdown-item danger" onclick="navLogout()">Sign Out</button>
+      </div>
+    </div>
   </div>
 </nav>
 </header>
@@ -123,6 +142,7 @@
 </footer>
 
 <script src="js/theme.js"></script>
+
 <script>
 function openMobileMenu(id) {
   document.getElementById('mobileMenu-' + id).classList.add('open');
@@ -133,14 +153,10 @@ function closeMobileMenu(id) {
   document.body.style.overflow = '';
 }
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const _sb = window.supabase.createClient('https://tzujckucxxmbxkpfkngn.supabase.co','sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1');
-async function checkAuthNav(e) {
-  e.preventDefault();
-  const { data } = await _sb.auth.getSession();
-  window.location.href = data.session ? 'dashboard.html' : 'login.html?msg=signin';
-}
-</script>
+
+<script src="js/auth.js"></script>
+
 </body>
 </html>

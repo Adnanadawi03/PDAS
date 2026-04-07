@@ -2,9 +2,21 @@ const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Redirect if already logged in
+// If already logged in → go straight to dashboard
 _supabase.auth.getSession().then(({ data }) => {
   if (data.session) window.location.href = 'dashboard.html';
+});
+
+// Show message if redirected from dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('msg') === 'signin') {
+    const banner = document.getElementById('authBanner');
+    if (banner) {
+      banner.textContent = '🔒 Please sign in or create an account to access the dashboard.';
+      banner.style.display = 'block';
+    }
+  }
 });
 
 function switchTab(tab) {
@@ -24,19 +36,25 @@ function checkStrength(pw) {
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   const colors = ['#ef4444','#f59e0b','#22c55e','#00e5ff'];
   const labels = ['Weak','Fair','Good','Strong'];
-  segs.forEach((s, i) => { s.style.background = i < score ? colors[score - 1] : 'rgba(255,255,255,0.07)'; });
-  if (score > 0) hint.textContent = labels[score - 1] + ' password';
+  segs.forEach((s,i) => { s.style.background = i < score ? colors[score-1] : 'rgba(255,255,255,0.07)'; });
+  if (score > 0) hint.textContent = labels[score-1] + ' password';
 }
 
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPw').value;
+  const rememberMe = document.getElementById('rememberMe').checked;
   const errEl = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
   errEl.style.display = 'none';
   if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
   btn.textContent = 'Signing in...'; btn.disabled = true;
-  const { error } = await _supabase.auth.signInWithPassword({ email, password });
+
+  const { error } = await _supabase.auth.signInWithPassword({
+    email, password,
+    options: { persistSession: rememberMe }
+  });
+
   if (error) {
     errEl.textContent = error.message; errEl.style.display = 'block';
     btn.textContent = 'Sign In →'; btn.disabled = false;

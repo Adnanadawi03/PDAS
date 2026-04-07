@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Settings</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">PDAS<span>.</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📧</span> Email Scans</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📎</span> File Scans</a>
+    <a href="#" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span> Settings</a>
+    <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Website</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">?</div>
+      <div>
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role" id="userEmail"></div>
+      </div>
+    </div>
+    <button onclick="doLogout()" class="signout-btn">Sign Out</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div>
+        <h1 class="page-title">Settings</h1>
+        <div class="page-sub">Manage your account and preferences</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    </div>
+  </div>
+
+  <div class="settings-grid">
+
+    <!-- PROFILE CARD -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-icon">👤</div>
+        <div>
+          <h3>Profile</h3>
+          <p>Update your name and account info</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div class="avatar-row">
+          <div class="settings-avatar" id="settingsAvatar">?</div>
+          <div>
+            <div class="settings-avatar-name" id="settingsName">Loading...</div>
+            <div class="settings-avatar-email" id="settingsEmail"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>FULL NAME</label>
+          <input type="text" id="inputName" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label>EMAIL ADDRESS</label>
+          <input type="email" id="inputEmail" placeholder="you@example.com" disabled style="opacity:0.5;cursor:not-allowed;">
+          <div class="field-hint">Email cannot be changed here. Contact support.</div>
+        </div>
+        <div id="profileMsg" class="settings-msg" style="display:none;"></div>
+        <button class="settings-btn" onclick="updateProfile()">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- PASSWORD CARD -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-icon">🔒</div>
+        <div>
+          <h3>Password</h3>
+          <p>Change your account password</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div class="form-group">
+          <label>NEW PASSWORD</label>
+          <input type="password" id="newPassword" placeholder="••••••••" oninput="checkPwStrength(this.value)">
+          <div class="strength-bar">
+            <div class="strength-seg" id="ps1"></div>
+            <div class="strength-seg" id="ps2"></div>
+            <div class="strength-seg" id="ps3"></div>
+            <div class="strength-seg" id="ps4"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>CONFIRM NEW PASSWORD</label>
+          <input type="password" id="confirmPassword" placeholder="••••••••">
+        </div>
+        <div id="passwordMsg" class="settings-msg" style="display:none;"></div>
+        <button class="settings-btn" onclick="updatePassword()">Update Password</button>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <button class="settings-btn-outline" onclick="sendResetEmail()">Send Reset Email Instead</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREFERENCES CARD -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-icon">🎨</div>
+        <div>
+          <h3>Preferences</h3>
+          <p>Customize your experience</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div class="pref-row">
+          <div>
+            <div class="pref-label">Dark Mode</div>
+            <div class="pref-sub">Toggle between dark and light theme</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="darkModeToggle" onchange="toggleThemeFromSettings(this)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="pref-row">
+          <div>
+            <div class="pref-label">Email Notifications</div>
+            <div class="pref-sub">Get alerts for high-risk threats</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="pref-row">
+          <div>
+            <div class="pref-label">Auto-scan Attachments</div>
+            <div class="pref-sub">Automatically scan all file attachments</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="settings-card danger-card">
+      <div class="settings-card-header">
+        <div class="settings-icon">⚠️</div>
+        <div>
+          <h3>Danger Zone</h3>
+          <p>Irreversible account actions</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div class="danger-item">
+          <div>
+            <div class="pref-label">Sign Out of All Devices</div>
+            <div class="pref-sub">Revoke all active sessions everywhere</div>
+          </div>
+          <button class="settings-btn-danger" onclick="signOutAll()">Sign Out All</button>
+        </div>
+        <div class="danger-item" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
+          <div>
+            <div class="pref-label">Delete Account</div>
+            <div class="pref-sub">Permanently remove your account and data</div>
+          </div>
+          <button class="settings-btn-danger" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/theme.js"></script>
+<script src="js/settings.js"></script>
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+function toggleThemeFromSettings(cb) {
+  document.body.classList.toggle('light', !document.body.classList.contains('light') ? true : false);
+  toggleTheme();
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const darkToggle = document.getElementById('darkModeToggle');
+  if (darkToggle) darkToggle.checked = !document.body.classList.contains('light');
+});
+</script>
+</body>
+</html>

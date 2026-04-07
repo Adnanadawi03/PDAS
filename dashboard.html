@@ -9,7 +9,8 @@
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">PDAS<span>.</span></div>
   <nav class="sidebar-nav">
     <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
@@ -34,9 +35,12 @@
 
 <main class="main">
   <div class="topbar">
-    <div>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div>
       <h1 class="page-title">Security Dashboard</h1>
       <div class="page-sub">Last updated: Today at 14:33 — 247 emails scanned</div>
+      </div>
     </div>
     <div class="topbar-right">
       <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
@@ -99,15 +103,11 @@
         <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Email from <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6b181e1b1b04191f2b0c021f031e0945080406">[email&#160;protected]</a></b> passed all checks</div><div class="act-time">15 min ago</div></div></div>
         <div class="activity-item"><div class="act-icon high">🚨</div><div><div class="act-text">Malicious attachment (.exe) blocked in PDF disguise</div><div class="act-time">22 min ago</div></div></div>
         <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Newsletter from <b><a href="/cdn-cgi/l/email-protection" class="__cf_email__
-        <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Newsletter from <b>newsletter@medium.com</b> cleared</div><div class="act-time">41 min ago</div></div></div>
+        <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Newsletter from <b><span class="__cf_email__" data-cfemail="aac4cfddd9c6cfdedecfd8eac7cfcec3dfc784c9c5c7">[email&#160;protected]</span></b> cleared</div><div class="act-time">41 min ago</div></div></div>
         <div class="activity-item"><div class="act-icon med">⚠️</div><div><div class="act-text">Spoofed sender detected — impersonating PayPal</div><div class="act-time">1 hr ago</div></div></div>
       </div>
     </div>
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/theme.js"></script>
-<script src="js/dashboard.js"></script>
-</body>
-</html>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-st

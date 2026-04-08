@@ -182,7 +182,34 @@
         </div>
       </div>
     </div>
+ <!-- DANGER ZONE -->
+    <div class="settings-card danger-card">
+      <div class="settings-card-header">
+        <div class="settings-icon">⚠️</div>
+        <div>
+          <h3>Danger Zone</h3>
+          <p>Irreversible account actions</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div class="danger-item">
+          <div>
+            <div class="pref-label">Sign Out of All Devices</div>
+            <div class="pref-sub">Revoke all active sessions everywhere</div>
+          </div>
+          <button class="settings-btn-danger" onclick="signOutAll()">Sign Out All</button>
+        </div>
+        <div class="danger-item" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
+          <div>
+            <div class="pref-label">Delete Account</div>
+            <div class="pref-sub">Permanently remove your account and data</div>
+          </div>
+          <button class="settings-btn-danger" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
 
+  </div>
     <!-- 2FA CARD -->
     <div class="settings-card" style="grid-column: 1 / -1;">
       <div class="settings-card-header">
@@ -257,34 +284,7 @@
       </div>
     </div>
 
-    <!-- DANGER ZONE -->
-    <div class="settings-card danger-card">
-      <div class="settings-card-header">
-        <div class="settings-icon">⚠️</div>
-        <div>
-          <h3>Danger Zone</h3>
-          <p>Irreversible account actions</p>
-        </div>
-      </div>
-      <div class="settings-body">
-        <div class="danger-item">
-          <div>
-            <div class="pref-label">Sign Out of All Devices</div>
-            <div class="pref-sub">Revoke all active sessions everywhere</div>
-          </div>
-          <button class="settings-btn-danger" onclick="signOutAll()">Sign Out All</button>
-        </div>
-        <div class="danger-item" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
-          <div>
-            <div class="pref-label">Delete Account</div>
-            <div class="pref-sub">Permanently remove your account and data</div>
-          </div>
-          <button class="settings-btn-danger" onclick="confirmDelete()">Delete</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
+   
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

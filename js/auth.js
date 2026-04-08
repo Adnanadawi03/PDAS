@@ -62,7 +62,7 @@ async function navLogout() {
 }
 
 async function checkAuthNav(e) {
-  e.preventDefault();
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   const { data } = await _supabase.auth.getSession();
   window.location.href = data.session ? 'dashboard.html' : 'login.html?msg=signin';
 }

@@ -95,6 +95,27 @@
       <div id="signupSuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
       <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
     </div>
+
+    <!-- STEP 2: Verify OTP after signup -->
+    <div id="verifyForm" style="display:none;">
+      <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">📧</div>
+        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;">Check Your Email</h3>
+        <p style="color:var(--muted);font-size:0.85rem;">We sent a 6-digit code to <b id="verifyEmailLabel"></b></p>
+      </div>
+      <div class="form-group">
+        <label>VERIFICATION CODE</label>
+        <input type="text" id="verifyCode" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing:0.2em;font-size:1.2rem;text-align:center;">
+      </div>
+      <div id="verifyError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+      <div id="verifySuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+      <button class="submit-btn" id="verifyBtn" onclick="handleVerify()">Confirm Account →</button>
+      <div style="margin-top:0.75rem;text-align:center;">
+        <button onclick="resendSignupCode()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;cursor:pointer;">Resend code</button>
+        &nbsp;·&nbsp;
+        <button onclick="backToSignup()" style="background:none;border:none;color:var(--muted);font-size:0.82rem;cursor:pointer;">← Back</button>
+      </div>
+    </div>
   </div>
   </div>
 </div>

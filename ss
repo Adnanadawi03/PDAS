@@ -1,1 +1,0 @@
-127.0.0.1:3000/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired&sb=

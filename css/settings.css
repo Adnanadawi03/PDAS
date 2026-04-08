@@ -67,3 +67,15 @@ input:checked + .toggle-slider::before { background: var(--accent); transform: t
 /* STRENGTH BAR */
 .strength-bar { display: flex; gap: 4px; margin-top: 0.5rem; }
 .strength-seg { height: 3px; flex: 1; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+
+/* STEP INDICATOR */
+.step-indicator {
+  display: flex; align-items: center; gap: 0; margin-bottom: 1.2rem;
+}
+.step-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0;
+}
+.step-dot.done { background: var(--low); }
+.step-dot.active { background: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.2); }
+.step-line { flex: 1; height: 2px; background: var(--border); margin: 0 6px; }

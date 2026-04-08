@@ -17,7 +17,7 @@ body { display: flex; min-height: 100vh; }
 .user-role { font-size: 0.75rem; color: var(--muted); }
 
 /* MAIN */
-.main { margin-left: var(--sidebar); flex: 1; padding: 2rem 2.5rem; max-width: calc(100vw - var(--sidebar)); }
+.main { margin-left: var(--sidebar); flex: 1; padding: 2rem 2.5rem; max-width: calc(100vw - var(--sidebar)); position: relative; z-index: 1; }
 .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
 .page-title { font-size: 1.5rem; font-weight: 800; }
 .page-sub { color: var(--muted); font-size: 0.85rem; margin-top: 0.1rem; }

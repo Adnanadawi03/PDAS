@@ -66,6 +66,24 @@
       <button class="submit-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
     </div>
 
+
+    <!-- 2FA CHALLENGE -->
+    <div id="mfaForm" style="display:none;">
+      <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🔐</div>
+        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;">Two-Factor Authentication</h3>
+        <p style="color:var(--muted);font-size:0.85rem;">Enter the 6-digit code from your authenticator app</p>
+      </div>
+      <div class="form-group">
+        <label>AUTHENTICATOR CODE</label>
+        <input type="text" id="mfaCode" placeholder="000000" maxlength="6" style="letter-spacing:0.3em;font-size:1.2rem;text-align:center;">
+      </div>
+      <div id="mfaError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+      <button class="submit-btn" id="mfaBtn" onclick="handleMFAChallenge()">Verify →</button>
+      <div style="margin-top:0.75rem;text-align:center;">
+        <button onclick="showLoginForm()" style="background:none;border:none;color:var(--muted);font-size:0.82rem;cursor:pointer;">← Back to login</button>
+      </div>
+    </div>
     <!-- SIGNUP FORM -->
     <div class="signup-form" id="signupForm">
       <div class="form-group">

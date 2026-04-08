@@ -226,8 +226,10 @@ function closeSidebar() {
   document.getElementById('sidebarOverlay').classList.remove('active');
 }
 function toggleThemeFromSettings(cb) {
-  document.body.classList.toggle('light', !document.body.classList.contains('light') ? true : false);
-  toggleTheme();
+  const goLight = cb.checked === false;
+  document.body.classList.toggle('light', goLight);
+  document.getElementById('themeBtn').textContent = goLight ? '☀️' : '🌙';
+  localStorage.setItem('pdas-theme', goLight ? 'light' : 'dark');
 }
 document.addEventListener('DOMContentLoaded', function() {
   const darkToggle = document.getElementById('darkModeToggle');

@@ -63,15 +63,16 @@ async function handleLogin() {
   }
 }
 
+let _pendingEmail = '';
+
 async function handleSignup() {
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPw').value;
   const confirm = document.getElementById('signupConfirm').value;
   const errEl = document.getElementById('signupError');
-  const sucEl = document.getElementById('signupSuccess');
   const btn = document.getElementById('signupBtn');
-  errEl.style.display = 'none'; sucEl.style.display = 'none';
+  errEl.style.display = 'none';
   if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
   if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
   if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
@@ -81,10 +82,44 @@ async function handleSignup() {
     errEl.textContent = error.message; errEl.style.display = 'block';
     btn.textContent = 'Create Account →'; btn.disabled = false;
   } else {
-    sucEl.textContent = '✓ Account created! Check your email to confirm, then sign in.';
-    sucEl.style.display = 'block';
+    _pendingEmail = email;
+    document.getElementById('verifyEmailLabel').textContent = email;
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('verifyForm').style.display = 'block';
     btn.textContent = 'Create Account →'; btn.disabled = false;
-    setTimeout(() => switchTab('login'), 2000);
+  }
+}
+
+function backToSignup() {
+  document.getElementById('verifyForm').style.display = 'none';
+  document.getElementById('signupForm').style.display = 'block';
+}
+
+async function resendSignupCode() {
+  if (!_pendingEmail) return;
+  const { error } = await _supabase.auth.resend({ type: 'signup', email: _pendingEmail });
+  const el = document.getElementById('verifySuccess');
+  el.textContent = error ? error.message : '✓ Code resent to your email.';
+  el.style.color = error ? '#ef4444' : '#22c55e';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+async function handleVerify() {
+  const code = document.getElementById('verifyCode').value.trim();
+  const errEl = document.getElementById('verifyError');
+  const sucEl = document.getElementById('verifySuccess');
+  const btn = document.getElementById('verifyBtn');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+  if (!code || code.length < 6) { errEl.textContent = 'Please enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Verifying...'; btn.disabled = true;
+  const { error } = await _supabase.auth.verifyOtp({ email: _pendingEmail, token: code, type: 'signup' });
+  if (error) {
+    errEl.textContent = 'Invalid or expired code. Please try again.'; errEl.style.display = 'block';
+    btn.textContent = 'Confirm Account →'; btn.disabled = false;
+  } else {
+    sucEl.textContent = '✓ Account confirmed! Redirecting...'; sucEl.style.display = 'block';
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
   }
 }
 

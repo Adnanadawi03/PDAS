@@ -19,6 +19,7 @@ async function initSettings() {
   document.getElementById('inputEmail').value = user.email;
   const darkToggle = document.getElementById('darkModeToggle');
   if (darkToggle) darkToggle.checked = !document.body.classList.contains('light');
+  await checkMFAStatus();
 }
 
 // ── Helpers ──
@@ -139,3 +140,111 @@ function confirmDelete() {
 }
 
 document.addEventListener('DOMContentLoaded', initSettings);
+
+// ── 2FA ──
+let _mfaFactorId = null;
+
+async function checkMFAStatus() {
+  const { data, error } = await _supabase.auth.mfa.listFactors();
+  if (error || !data) return false;
+  const totp = data.totp?.find(f => f.status === 'verified');
+  if (totp) {
+    _mfaFactorId = totp.id;
+    document.getElementById('mfaStatusIcon').textContent = '🔒';
+    document.getElementById('mfaStatusIcon').style.background = 'rgba(34,197,94,0.1)';
+    document.getElementById('mfaStatusText').textContent = '2FA is Enabled';
+    document.getElementById('mfaStatusText').style.color = '#22c55e';
+    document.getElementById('mfaStatusSub').textContent = 'Your account is protected by authenticator app';
+    document.getElementById('mfaToggleBtn').textContent = 'Disable 2FA';
+    document.getElementById('mfaToggleBtn').style.background = 'rgba(239,68,68,0.15)';
+    document.getElementById('mfaToggleBtn').style.color = '#ef4444';
+    document.getElementById('mfaToggleBtn').style.border = '1px solid rgba(239,68,68,0.3)';
+    return true;
+  }
+  return false;
+}
+
+async function toggleMFA() {
+  const isEnabled = await checkMFAStatus();
+  if (isEnabled) {
+    document.getElementById('mfaDisable').style.display = 'block';
+    document.getElementById('mfaSetup').style.display = 'none';
+  } else {
+    await startMFASetup();
+  }
+}
+
+async function startMFASetup() {
+  document.getElementById('mfaMsg').style.display = 'none';
+  const { data, error } = await _supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'PDAS Authenticator' });
+  if (error) { showMsg('mfaMsg', error.message, 'error'); return; }
+
+  _mfaFactorId = data.id;
+  const secret = data.totp.secret;
+  const qrUri  = data.totp.uri;
+
+  document.getElementById('mfaSecret').textContent = secret;
+  document.getElementById('mfaQR').innerHTML = '';
+  new QRCode(document.getElementById('mfaQR'), { text: qrUri, width: 150, height: 150, colorDark: '#000000', colorLight: '#ffffff' });
+  document.getElementById('mfaSetup').style.display = 'block';
+  document.getElementById('mfaDisable').style.display = 'none';
+}
+
+async function verifyAndEnableMFA() {
+  const code = document.getElementById('mfaVerifyCode').value.trim();
+  if (!code || code.length < 6) { showMsg('mfaMsg', 'Please enter the 6-digit code from your app.', 'error'); return; }
+
+  const { data: challengeData, error: challengeErr } = await _supabase.auth.mfa.challenge({ factorId: _mfaFactorId });
+  if (challengeErr) { showMsg('mfaMsg', challengeErr.message, 'error'); return; }
+
+  const { error } = await _supabase.auth.mfa.verify({ factorId: _mfaFactorId, challengeId: challengeData.id, code });
+  if (error) {
+    showMsg('mfaMsg', 'Invalid code. Please check your authenticator app and try again.', 'error');
+  } else {
+    document.getElementById('mfaSetup').style.display = 'none';
+    document.getElementById('mfaVerifyCode').value = '';
+    await checkMFAStatus();
+    showMsg('mfaMsg', '✓ 2FA enabled successfully! Your account is now more secure.', 'success');
+  }
+}
+
+function cancelMFASetup() {
+  document.getElementById('mfaSetup').style.display = 'none';
+  document.getElementById('mfaVerifyCode').value = '';
+  if (_mfaFactorId) _supabase.auth.mfa.unenroll({ factorId: _mfaFactorId });
+}
+
+async function disableMFA() {
+  const code = document.getElementById('mfaDisableCode').value.trim();
+  if (!code || code.length < 6) { showMsg('mfaMsg', 'Please enter the 6-digit code from your app.', 'error'); return; }
+
+  const { data: challengeData, error: challengeErr } = await _supabase.auth.mfa.challenge({ factorId: _mfaFactorId });
+  if (challengeErr) { showMsg('mfaMsg', challengeErr.message, 'error'); return; }
+
+  const { error: verifyErr } = await _supabase.auth.mfa.verify({ factorId: _mfaFactorId, challengeId: challengeData.id, code });
+  if (verifyErr) { showMsg('mfaMsg', 'Invalid code. Please try again.', 'error'); return; }
+
+  const { error } = await _supabase.auth.mfa.unenroll({ factorId: _mfaFactorId });
+  if (error) {
+    showMsg('mfaMsg', error.message, 'error');
+  } else {
+    _mfaFactorId = null;
+    document.getElementById('mfaDisable').style.display = 'none';
+    document.getElementById('mfaDisableCode').value = '';
+    document.getElementById('mfaStatusIcon').textContent = '🔓';
+    document.getElementById('mfaStatusIcon').style.background = 'rgba(239,68,68,0.1)';
+    document.getElementById('mfaStatusText').textContent = '2FA is Disabled';
+    document.getElementById('mfaStatusText').style.color = 'var(--text)';
+    document.getElementById('mfaStatusSub').textContent = 'Your account is protected by password only';
+    document.getElementById('mfaToggleBtn').textContent = 'Enable 2FA';
+    document.getElementById('mfaToggleBtn').style.background = '';
+    document.getElementById('mfaToggleBtn').style.color = '';
+    document.getElementById('mfaToggleBtn').style.border = '';
+    showMsg('mfaMsg', '2FA has been disabled.', 'success');
+  }
+}
+
+function cancelDisableMFA() {
+  document.getElementById('mfaDisable').style.display = 'none';
+  document.getElementById('mfaDisableCode').value = '';
+}

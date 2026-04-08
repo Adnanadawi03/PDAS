@@ -183,6 +183,80 @@
       </div>
     </div>
 
+    <!-- 2FA CARD -->
+    <div class="settings-card" style="grid-column: 1 / -1;">
+      <div class="settings-card-header">
+        <div class="settings-icon">🔐</div>
+        <div>
+          <h3>Two-Factor Authentication (2FA)</h3>
+          <p>Add an extra layer of security using an authenticator app</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div id="mfaMsg" class="settings-msg" style="display:none;"></div>
+
+        <!-- STATUS -->
+        <div id="mfaStatus" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;padding:1rem;background:var(--bg2);border-radius:10px;margin-bottom:1.5rem;">
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div id="mfaStatusIcon" style="width:38px;height:38px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🔓</div>
+            <div>
+              <div id="mfaStatusText" style="font-weight:700;font-size:0.95rem;">2FA is Disabled</div>
+              <div id="mfaStatusSub" style="font-size:0.8rem;color:var(--muted);">Your account is protected by password only</div>
+            </div>
+          </div>
+          <button id="mfaToggleBtn" class="settings-btn" style="width:auto;padding:0.6rem 1.4rem;" onclick="toggleMFA()">Enable 2FA</button>
+        </div>
+
+        <!-- STEP 1: SETUP - show QR code -->
+        <div id="mfaSetup" style="display:none;">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:start;">
+            <div style="text-align:center;">
+              <div id="mfaQR" style="background:#fff;padding:12px;border-radius:10px;display:inline-block;margin-bottom:0.75rem;"></div>
+              <div style="font-size:0.75rem;color:var(--muted);">Scan with your authenticator app</div>
+            </div>
+            <div>
+              <h4 style="font-size:0.95rem;margin-bottom:0.75rem;">Setup Instructions</h4>
+              <ol style="color:var(--muted);font-size:0.85rem;line-height:2;padding-left:1.2rem;">
+                <li>Download <b style="color:var(--text);">Google Authenticator</b> or <b style="color:var(--text);">Authy</b></li>
+                <li>Tap <b style="color:var(--text);">+</b> and scan the QR code</li>
+                <li>Enter the 6-digit code shown in the app below</li>
+              </ol>
+              <div style="margin-top:1rem;">
+                <label style="font-size:0.75rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;">OR ENTER SECRET KEY MANUALLY</label>
+                <div id="mfaSecret" style="font-family:monospace;font-size:0.85rem;background:var(--bg2);padding:0.6rem 0.9rem;border-radius:8px;margin-top:0.4rem;color:var(--accent);letter-spacing:0.1em;word-break:break-all;"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+            <div class="form-group">
+              <label>ENTER CODE FROM AUTHENTICATOR APP</label>
+              <input type="text" id="mfaVerifyCode" placeholder="000000" maxlength="6" style="letter-spacing:0.3em;font-size:1.2rem;text-align:center;max-width:220px;">
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <button class="settings-btn" style="width:auto;padding:0.7rem 1.5rem;" onclick="verifyAndEnableMFA()">Verify &amp; Enable 2FA</button>
+              <button class="settings-btn-outline" style="width:auto;padding:0.7rem 1.2rem;" onclick="cancelMFASetup()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DISABLE 2FA -->
+        <div id="mfaDisable" style="display:none;">
+          <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1.2rem;">
+            To disable 2FA, enter the current code from your authenticator app to confirm.
+          </p>
+          <div class="form-group">
+            <label>AUTHENTICATOR CODE</label>
+            <input type="text" id="mfaDisableCode" placeholder="000000" maxlength="6" style="letter-spacing:0.3em;font-size:1.2rem;text-align:center;max-width:220px;">
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="settings-btn-danger" style="padding:0.7rem 1.5rem;" onclick="disableMFA()">Disable 2FA</button>
+            <button class="settings-btn-outline" style="width:auto;padding:0.7rem 1.2rem;" onclick="cancelDisableMFA()">Cancel</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- DANGER ZONE -->
     <div class="settings-card danger-card">
       <div class="settings-card-header">
@@ -214,6 +288,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/settings.js"></script>
 <script>

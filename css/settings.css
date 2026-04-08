@@ -62,7 +62,7 @@ input:checked + .toggle-slider { background: rgba(0,229,255,0.2); border-color: 
 input:checked + .toggle-slider::before { background: var(--accent); transform: translateX(20px); }
 
 /* DANGER ZONE */
-.danger-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;}
+.danger-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;}
 
 /* STRENGTH BAR */
 .strength-bar { display: flex; gap: 4px; margin-top: 0.5rem; }

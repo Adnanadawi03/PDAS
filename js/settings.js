@@ -2,14 +2,13 @@ const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ── Init ──
 async function initSettings() {
   const { data: { session } } = await _supabase.auth.getSession();
   if (!session) { window.location.href = 'login.html?msg=signin'; return; }
-
   const user = session.user;
   const name = user.user_metadata?.full_name || user.email.split('@')[0];
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
-
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userName').textContent = name;
   document.getElementById('userEmail').textContent = user.email;
@@ -18,19 +17,27 @@ async function initSettings() {
   document.getElementById('settingsEmail').textContent = user.email;
   document.getElementById('inputName').value = name;
   document.getElementById('inputEmail').value = user.email;
-
   const darkToggle = document.getElementById('darkModeToggle');
   if (darkToggle) darkToggle.checked = !document.body.classList.contains('light');
 }
 
+// ── Helpers ──
 function showMsg(id, text, type) {
   const el = document.getElementById(id);
+  if (!el) return;
   el.textContent = text;
   el.className = 'settings-msg ' + type;
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
+function showStep1() {
+  document.getElementById('pwStep1').style.display = 'block';
+  document.getElementById('pwStep2').style.display = 'none';
+  document.getElementById('passwordMsg').style.display = 'none';
+}
+
+// ── Profile ──
 async function updateProfile() {
   const name = document.getElementById('inputName').value.trim();
   if (!name) { showMsg('profileMsg', 'Name cannot be empty.', 'error'); return; }
@@ -39,13 +46,15 @@ async function updateProfile() {
     showMsg('profileMsg', error.message, 'error');
   } else {
     showMsg('profileMsg', '✓ Profile updated successfully!', 'success');
+    const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('settingsName').textContent = name;
-    document.getElementById('settingsAvatar').textContent = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('settingsAvatar').textContent = initials;
     document.getElementById('userName').textContent = name;
-    document.getElementById('userAvatar').textContent = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('userAvatar').textContent = initials;
   }
 }
 
+// ── Password strength ──
 function checkPwStrength(pw) {
   const segs = ['ps1','ps2','ps3','ps4'].map(id => document.getElementById(id));
   let score = 0;
@@ -54,31 +63,64 @@ function checkPwStrength(pw) {
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   const colors = ['#ef4444','#f59e0b','#22c55e','#00e5ff'];
-  segs.forEach((s,i) => { s.style.background = i < score ? colors[score-1] : 'rgba(255,255,255,0.07)'; });
+  segs.forEach((s,i) => { if(s) s.style.background = i < score ? colors[score-1] : 'rgba(255,255,255,0.07)'; });
 }
 
-async function updatePassword() {
-  const pw = document.getElementById('newPassword').value;
-  const confirm = document.getElementById('confirmPassword').value;
-  if (!pw) { showMsg('passwordMsg', 'Please enter a new password.', 'error'); return; }
-  if (pw !== confirm) { showMsg('passwordMsg', 'Passwords do not match.', 'error'); return; }
-  if (pw.length < 8) { showMsg('passwordMsg', 'Password must be at least 8 characters.', 'error'); return; }
+// ── Step 1: Send code ──
+async function sendResetCode() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  const email = session.user.email;
+  const { error } = await _supabase.auth.resetPasswordForEmail(email);
+  if (error) {
+    showMsg('passwordMsg', error.message, 'error');
+  } else {
+    document.getElementById('resetEmailLabel').textContent = email;
+    document.getElementById('pwStep1').style.display = 'none';
+    document.getElementById('pwStep2').style.display = 'block';
+    showMsg('passwordMsg', '✓ Code sent! Check your email inbox.', 'success');
+  }
+}
+
+// ── Resend code ──
+async function resendCode() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  const { error } = await _supabase.auth.resetPasswordForEmail(session.user.email);
+  showMsg('passwordMsg', error ? error.message : '✓ Code resent to your email.', error ? 'error' : 'success');
+}
+
+// ── Step 2: Verify code + update password ──
+async function verifyCodeAndUpdate() {
+  const code = document.getElementById('resetCode').value.trim();
+  const pw   = document.getElementById('newPassword').value;
+  const conf = document.getElementById('confirmPassword').value;
+
+  if (!code || code.length < 6) { showMsg('passwordMsg', 'Please enter the 6-digit code from your email.', 'error'); return; }
+  if (!pw)        { showMsg('passwordMsg', 'Please enter a new password.', 'error'); return; }
+  if (pw !== conf){ showMsg('passwordMsg', 'Passwords do not match.', 'error'); return; }
+  if (pw.length < 8){ showMsg('passwordMsg', 'Password must be at least 8 characters.', 'error'); return; }
+
+  const { data: { session } } = await _supabase.auth.getSession();
+  const email = session.user.email;
+
+  const { error: otpError } = await _supabase.auth.verifyOtp({ email, token: code, type: 'recovery' });
+  if (otpError) {
+    showMsg('passwordMsg', 'Invalid or expired code. Please try again or resend.', 'error');
+    return;
+  }
+
   const { error } = await _supabase.auth.updateUser({ password: pw });
   if (error) {
     showMsg('passwordMsg', error.message, 'error');
   } else {
     showMsg('passwordMsg', '✓ Password updated successfully!', 'success');
+    document.getElementById('resetCode').value = '';
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmPassword').value = '';
+    setTimeout(showStep1, 2000);
   }
 }
 
-async function sendResetEmail() {
-  const { data: { session } } = await _supabase.auth.getSession();
-  const { error } = await _supabase.auth.resetPasswordForEmail(session.user.email);
-  showMsg('passwordMsg', error ? error.message : '✓ Reset email sent to ' + session.user.email, error ? 'error' : 'success');
-}
-
+// ── Danger zone ──
 async function signOutAll() {
   await _supabase.auth.signOut({ scope: 'global' });
   window.location.href = 'login.html';

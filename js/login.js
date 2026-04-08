@@ -40,6 +40,14 @@ function checkStrength(pw) {
   if (score > 0) hint.textContent = labels[score-1] + ' password';
 }
 
+let _mfaChallengeId = null;
+let _mfaFactorId = null;
+
+function showLoginForm() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('mfaForm').style.display = 'none';
+}
+
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPw').value;
@@ -50,7 +58,7 @@ async function handleLogin() {
   if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
   btn.textContent = 'Signing in...'; btn.disabled = true;
 
-  const { error } = await _supabase.auth.signInWithPassword({
+  const { data, error } = await _supabase.auth.signInWithPassword({
     email, password,
     options: { persistSession: rememberMe }
   });
@@ -58,6 +66,42 @@ async function handleLogin() {
   if (error) {
     errEl.textContent = error.message; errEl.style.display = 'block';
     btn.textContent = 'Sign In →'; btn.disabled = false;
+    return;
+  }
+
+  // Check if 2FA is required
+  const { data: mfaData } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (mfaData?.nextLevel === 'aal2' && mfaData.nextLevel !== mfaData.currentLevel) {
+    // 2FA required — show challenge
+    const { data: factors } = await _supabase.auth.mfa.listFactors();
+    const totp = factors?.totp?.[0];
+    if (totp) {
+      _mfaFactorId = totp.id;
+      const { data: challenge, error: challengeErr } = await _supabase.auth.mfa.challenge({ factorId: _mfaFactorId });
+      if (challengeErr) { errEl.textContent = challengeErr.message; errEl.style.display = 'block'; btn.textContent = 'Sign In →'; btn.disabled = false; return; }
+      _mfaChallengeId = challenge.id;
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('mfaForm').style.display = 'block';
+      btn.textContent = 'Sign In →'; btn.disabled = false;
+      return;
+    }
+  }
+
+  window.location.href = 'dashboard.html';
+}
+
+async function handleMFAChallenge() {
+  const code = document.getElementById('mfaCode').value.trim();
+  const errEl = document.getElementById('mfaError');
+  const btn = document.getElementById('mfaBtn');
+  errEl.style.display = 'none';
+  if (!code || code.length < 6) { errEl.textContent = 'Please enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Verifying...'; btn.disabled = true;
+
+  const { error } = await _supabase.auth.mfa.verify({ factorId: _mfaFactorId, challengeId: _mfaChallengeId, code });
+  if (error) {
+    errEl.textContent = 'Invalid code. Please try again.'; errEl.style.display = 'block';
+    btn.textContent = 'Verify →'; btn.disabled = false;
   } else {
     window.location.href = 'dashboard.html';
   }

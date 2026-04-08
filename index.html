@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -10,17 +9,17 @@
 </head>
 <body>
 
+
 <div class="mobile-menu" id="mobileMenu-index">
   <div class="mobile-menu-header">
     <div class="mobile-menu-logo">PDAS</div>
     <button class="mobile-close" onclick="closeMobileMenu('index')">✕</button>
   </div>
   <nav class="mobile-nav-links">
-    <a href="#how" onclick="closeMobileMenu('index')">How it works</a>
-    <a href="#threats" onclick="closeMobileMenu('index')">Threat Levels</a>
+    <a href="index.html" onclick="closeMobileMenu('index')">Home</a>
     <a href="about.html" onclick="closeMobileMenu('index')">About</a>
     <a href="dashboard.html" onclick="closeMobileMenu('index')">Dashboard</a>
-
+    
   </nav>
   <div class="mobile-menu-footer">
   <div id="mobileUserSection" style="display:none;margin-bottom:1rem;padding:1rem;background:var(--bg2);border-radius:10px;">
@@ -35,8 +34,7 @@
 <nav>
   <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
   <ul class="nav-links">
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#threats">Threat Levels</a></li>
+    <li><a href="index.html">Home</a></li>
     <li><a href="about.html">About</a></li>
     <li><a href="dashboard.html" onclick="checkAuthNav(event)">Dashboard</a></li>
   </ul>
@@ -49,10 +47,14 @@
       <span class="nav-user-name" id="navUserName"></span>
       <span class="nav-user-chevron">▾</span>
       <div class="nav-dropdown">
-        <a href="dashboard.html" class="nav-dropdown-item">📊 Dashboard</a>
-        <a href="settings.html" class="nav-dropdown-item">⚙️ Settings</a>
+        <div class="nav-dropdown-user">
+          <div class="nav-dropdown-user-name" id="navDropName"></div>
+          <div class="nav-dropdown-user-email" id="navDropEmail"></div>
+        </div>
+        <a href="dashboard.html" class="nav-dropdown-item" onclick="checkAuthNav(event)">📊 Dashboard</a>
+        <a href="settings.html" class="nav-dropdown-item" onclick="checkAuthNav(event)">⚙️ Settings</a>
         <div class="nav-dropdown-sep"></div>
-        <button class="nav-dropdown-item danger" onclick="navLogout()">Sign Out</button>
+        <button class="nav-dropdown-item danger" onclick="navLogout()">🚪 Sign Out</button>
       </div>
     </div>
   </div>
@@ -132,7 +134,6 @@
 </footer>
 
 <script src="js/theme.js"></script>
-
 <script>
 function openMobileMenu(id) {
   document.getElementById('mobileMenu-' + id).classList.add('open');
@@ -143,10 +144,7 @@ function closeMobileMenu(id) {
   document.body.style.overflow = '';
 }
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script src="js/auth.js"></script>
-
 </body>
 </html>

@@ -22,14 +22,17 @@ function showLogin() {
   document.getElementById('signupForm').style.display = 'none';
   document.getElementById('verifyForm').style.display = 'none';
   document.getElementById('mfaForm').style.display = 'none';
+  document.getElementById('tab-login').classList.add('active');
+  document.getElementById('tab-signup').classList.remove('active');
 }
 function showSignup() {
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('signupForm').style.display = 'block';
   document.getElementById('verifyForm').style.display = 'none';
   document.getElementById('mfaForm').style.display = 'none';
+  document.getElementById('tab-login').classList.remove('active');
+  document.getElementById('tab-signup').classList.add('active');
 }
-// Keep old switchTab for compatibility
 function switchTab(tab) { tab === 'login' ? showLogin() : showSignup(); }
 
 // ── Password strength + requirements ──

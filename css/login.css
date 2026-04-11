@@ -1,4 +1,4 @@
-.page-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; position: relative; overflow: hidden; }
+.page-wrap { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 6rem 1rem 3rem; position: relative; overflow: hidden; }
 .bg-glow { position: absolute; width: 700px; height: 700px; border-radius: 50%; background: radial-gradient(circle, rgba(0,229,255,0.05) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
 .grid-bg { position: absolute; inset: 0; opacity: 0.025; background-image: linear-gradient(var(--accent) 1px,transparent 1px),linear-gradient(90deg,var(--accent) 1px,transparent 1px); background-size: 60px 60px; }
 

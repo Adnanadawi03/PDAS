@@ -45,11 +45,15 @@
 <div class="page-wrap">
   <div class="grid-bg"></div>
   <div class="bg-glow"></div>
-  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px;gap:1rem;">
-    <div id="authBanner" style="display:none;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);color:#00e5ff;padding:0.8rem 1rem;border-radius:10px;font-size:0.88rem;text-align:center;width:100%;"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px;">
     <div class="auth-box" style="width:100%;">
       <div class="auth-logo">PDAS</div>
       <div class="auth-tagline">Phishing Detection &amp; Awareness System</div>
+      <div id="authBanner" style="display:none;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);color:#00e5ff;padding:0.8rem 1rem;border-radius:10px;font-size:0.85rem;text-align:center;margin-bottom:1.2rem;"></div>
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-login" onclick="showLogin()">Sign In</button>
+        <button class="tab-btn" id="tab-signup" onclick="showSignup()">Create Account</button>
+      </div>
 
       <!-- ── SIGN IN FORM ── -->
       <div id="loginForm">
@@ -71,10 +75,7 @@
         </div>
         <div id="loginError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
         <button class="submit-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
-        <div class="tab-switch">
-          <span style="color:var(--muted);font-size:0.88rem;">Don't have an account?</span>
-          <button class="tab-switch-btn" onclick="showSignup()"><b>Create Account</b></button>
-        </div>
+
       </div>
 
       <!-- ── 2FA CHALLENGE ── -->
@@ -90,9 +91,7 @@
         </div>
         <div id="mfaError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
         <button class="submit-btn" id="mfaBtn" onclick="handleMFAChallenge()">Verify →</button>
-        <div class="tab-switch">
-          <button onclick="showLogin()" class="tab-switch-btn" style="color:var(--muted);">← Back to Sign In</button>
-        </div>
+
       </div>
 
       <!-- ── CREATE ACCOUNT FORM ── -->
@@ -128,10 +127,7 @@
         </div>
         <div id="signupError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
         <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
-        <div class="tab-switch">
-          <span style="color:var(--muted);font-size:0.88rem;">Already have an account?</span>
-          <button class="tab-switch-btn" onclick="showLogin()"><b>Sign In</b></button>
-        </div>
+
       </div>
 
       <!-- ── VERIFY OTP ── -->

@@ -6,9 +6,19 @@
 <title>PDAS – Sign In</title>
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/login.css">
+<style>
+  .pw-requirements { margin-top: 0.6rem; display: none; }
+  .pw-requirements.show { display: block; }
+  .pw-req { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; transition: color 0.2s; }
+  .pw-req.met { color: var(--low); }
+  .pw-req-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.65rem; transition: all 0.2s; }
+  .pw-req.met .pw-req-dot { background: var(--low); border-color: var(--low); color: #fff; }
+  .tab-switch { display: flex; gap: 0.4rem; justify-content: center; margin-bottom: 1.5rem; }
+  .tab-switch-btn { background: none; border: none; color: var(--muted); font-size: 0.88rem; cursor: pointer; padding: 0.3rem 0; font-family: 'DM Sans', sans-serif; }
+  .tab-switch-btn b { color: var(--accent); }
+</style>
 </head>
 <body>
-
 
 <div class="mobile-menu" id="mobileMenu-login">
   <div class="mobile-menu-header">
@@ -18,15 +28,16 @@
   <nav class="mobile-nav-links">
     <a href="index.html" onclick="closeMobileMenu('login')">Home</a>
     <a href="about.html" onclick="closeMobileMenu('login')">About</a>
-    
   </nav>
   <div class="mobile-menu-footer"></div>
 </div>
+
 <header>
 <nav>
   <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
   <div style="display:flex;align-items:center;gap:0.75rem;">
-    <button class="hamburger" onclick="openMobileMenu('login')" title="Menu">☰</button><button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <button class="hamburger" onclick="openMobileMenu('login')" title="Menu">☰</button>
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
   </div>
 </nav>
 </header>
@@ -35,106 +46,115 @@
   <div class="grid-bg"></div>
   <div class="bg-glow"></div>
   <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px;gap:1rem;">
-  <div id="authBanner" style="display:none;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);color:#00e5ff;padding:0.8rem 1rem;border-radius:10px;font-size:0.88rem;text-align:center;width:100%;"></div>
-  <div class="auth-box" style="width:100%;">
-    <div class="auth-logo">PDAS</div>
-    <div class="auth-tagline">Phishing Detection &amp; Awareness System</div>
+    <div id="authBanner" style="display:none;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);color:#00e5ff;padding:0.8rem 1rem;border-radius:10px;font-size:0.88rem;text-align:center;width:100%;"></div>
+    <div class="auth-box" style="width:100%;">
+      <div class="auth-logo">PDAS</div>
+      <div class="auth-tagline">Phishing Detection &amp; Awareness System</div>
 
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
-      <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
-    </div>
-
-    <!-- LOGIN FORM -->
-    <div class="login-form active" id="loginForm">
-      <div class="form-group">
-        <label>EMAIL ADDRESS</label>
-        <input type="email" placeholder="you@example.com" id="loginEmail">
-      </div>
-      <div class="form-group">
-        <label>PASSWORD</label>
-        <input type="password" placeholder="••••••••" id="loginPw">
-      </div>
-      <div class="forgot"><a href="#" onclick="forgotPassword()">Forgot password?</a></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;color:var(--muted);">
-          <input type="checkbox" id="rememberMe" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
-          Remember me
-        </label>
-      </div>
-      <div id="loginError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
-      <button class="submit-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
-    </div>
-
-
-    <!-- 2FA CHALLENGE -->
-    <div id="mfaForm" style="display:none;">
-      <div style="text-align:center;margin-bottom:1.5rem;">
-        <div style="font-size:2rem;margin-bottom:0.5rem;">🔐</div>
-        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;">Two-Factor Authentication</h3>
-        <p style="color:var(--muted);font-size:0.85rem;">Enter the 6-digit code from your authenticator app</p>
-      </div>
-      <div class="form-group">
-        <label>AUTHENTICATOR CODE</label>
-        <input type="text" id="mfaCode" placeholder="000000" maxlength="6" style="letter-spacing:0.3em;font-size:1.2rem;text-align:center;">
-      </div>
-      <div id="mfaError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
-      <button class="submit-btn" id="mfaBtn" onclick="handleMFAChallenge()">Verify →</button>
-      <div style="margin-top:0.75rem;text-align:center;">
-        <button onclick="showLoginForm()" style="background:none;border:none;color:var(--muted);font-size:0.82rem;cursor:pointer;">← Back to login</button>
-      </div>
-    </div>
-    <!-- SIGNUP FORM -->
-    <div class="signup-form" id="signupForm">
-      <div class="form-group">
-        <label>FULL NAME</label>
-        <input type="text" placeholder="Your full name" id="signupName">
-      </div>
-      <div class="form-group">
-        <label>EMAIL ADDRESS</label>
-        <input type="email" placeholder="you@example.com" id="signupEmail">
-      </div>
-      <div class="form-group">
-        <label>PASSWORD</label>
-        <input type="password" placeholder="••••••••" id="signupPw" oninput="checkStrength(this.value)">
-        <div class="strength-bar">
-          <div class="strength-seg" id="s1"></div>
-          <div class="strength-seg" id="s2"></div>
-          <div class="strength-seg" id="s3"></div>
-          <div class="strength-seg" id="s4"></div>
+      <!-- ── SIGN IN FORM ── -->
+      <div id="loginForm">
+        <h3 style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1.2rem;">Sign In</h3>
+        <div class="form-group">
+          <label>EMAIL ADDRESS</label>
+          <input type="email" placeholder="you@example.com" id="loginEmail">
         </div>
-        <div class="pw-hint" id="pwHint">Use 8+ characters with letters, numbers &amp; symbols</div>
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" placeholder="••••••••" id="loginPw">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;color:var(--muted);">
+            <input type="checkbox" id="rememberMe" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            Remember me
+          </label>
+          <a href="#" onclick="forgotPassword()" style="color:var(--accent);font-size:0.8rem;text-decoration:none;">Forgot password?</a>
+        </div>
+        <div id="loginError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
+        <button class="submit-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
+        <div class="tab-switch">
+          <span style="color:var(--muted);font-size:0.88rem;">Don't have an account?</span>
+          <button class="tab-switch-btn" onclick="showSignup()"><b>Create Account</b></button>
+        </div>
       </div>
-      <div class="form-group">
-        <label>CONFIRM PASSWORD</label>
-        <input type="password" placeholder="••••••••" id="signupConfirm">
-      </div>
-      <div id="signupError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
-      <div id="signupSuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
-      <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
-    </div>
 
-    <!-- STEP 2: Verify OTP after signup -->
-    <div id="verifyForm" style="display:none;">
-      <div style="text-align:center;margin-bottom:1.5rem;">
-        <div style="font-size:2rem;margin-bottom:0.5rem;">📧</div>
-        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;">Check Your Email</h3>
-        <p style="color:var(--muted);font-size:0.85rem;">We sent a 6-digit code to <b id="verifyEmailLabel"></b></p>
+      <!-- ── 2FA CHALLENGE ── -->
+      <div id="mfaForm" style="display:none;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">🔐</div>
+          <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;">Two-Factor Authentication</h3>
+          <p style="color:var(--muted);font-size:0.85rem;">Enter the 6-digit code from your authenticator app</p>
+        </div>
+        <div class="form-group">
+          <label>AUTHENTICATOR CODE</label>
+          <input type="text" id="mfaCode" placeholder="000000" maxlength="6" style="letter-spacing:0.3em;font-size:1.2rem;text-align:center;">
+        </div>
+        <div id="mfaError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
+        <button class="submit-btn" id="mfaBtn" onclick="handleMFAChallenge()">Verify →</button>
+        <div class="tab-switch">
+          <button onclick="showLogin()" class="tab-switch-btn" style="color:var(--muted);">← Back to Sign In</button>
+        </div>
       </div>
-      <div class="form-group">
-        <label>VERIFICATION CODE</label>
-        <input type="text" id="verifyCode" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing:0.2em;font-size:1.2rem;text-align:center;">
+
+      <!-- ── CREATE ACCOUNT FORM ── -->
+      <div id="signupForm" style="display:none;">
+        <h3 style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1.2rem;">Create Account</h3>
+        <div class="form-group">
+          <label>FULL NAME</label>
+          <input type="text" placeholder="Your full name" id="signupName">
+        </div>
+        <div class="form-group">
+          <label>EMAIL ADDRESS</label>
+          <input type="email" placeholder="you@example.com" id="signupEmail">
+        </div>
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" placeholder="••••••••" id="signupPw" oninput="checkStrength(this.value)">
+          <div class="strength-bar" style="margin-top:0.4rem;">
+            <div class="strength-seg" id="s1"></div>
+            <div class="strength-seg" id="s2"></div>
+            <div class="strength-seg" id="s3"></div>
+            <div class="strength-seg" id="s4"></div>
+          </div>
+          <div class="pw-requirements" id="pwReqs">
+            <div class="pw-req" id="req-length"><div class="pw-req-dot">✓</div> At least 8 characters</div>
+            <div class="pw-req" id="req-upper"><div class="pw-req-dot">✓</div> One uppercase letter (A-Z)</div>
+            <div class="pw-req" id="req-number"><div class="pw-req-dot">✓</div> One number (0-9)</div>
+            <div class="pw-req" id="req-special"><div class="pw-req-dot">✓</div> One special character (!@#$...)</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>CONFIRM PASSWORD</label>
+          <input type="password" placeholder="••••••••" id="signupConfirm">
+        </div>
+        <div id="signupError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
+        <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
+        <div class="tab-switch">
+          <span style="color:var(--muted);font-size:0.88rem;">Already have an account?</span>
+          <button class="tab-switch-btn" onclick="showLogin()"><b>Sign In</b></button>
+        </div>
       </div>
-      <div id="verifyError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
-      <div id="verifySuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
-      <button class="submit-btn" id="verifyBtn" onclick="handleVerify()">Confirm Account →</button>
-      <div style="margin-top:0.75rem;text-align:center;">
-        <button onclick="resendSignupCode()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;cursor:pointer;">Resend code</button>
-        &nbsp;·&nbsp;
-        <button onclick="backToSignup()" style="background:none;border:none;color:var(--muted);font-size:0.82rem;cursor:pointer;">← Back</button>
+
+      <!-- ── VERIFY OTP ── -->
+      <div id="verifyForm" style="display:none;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">📧</div>
+          <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.4rem;">Check Your Email</h3>
+          <p style="color:var(--muted);font-size:0.85rem;">We sent a 6-digit code to <b id="verifyEmailLabel"></b></p>
+        </div>
+        <div class="form-group">
+          <label>VERIFICATION CODE</label>
+          <input type="text" id="verifyCode" placeholder="000000" maxlength="6" style="letter-spacing:0.2em;font-size:1.2rem;text-align:center;">
+        </div>
+        <div id="verifyError" style="color:#ef4444;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(239,68,68,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
+        <div id="verifySuccess" style="color:#22c55e;font-size:0.82rem;margin-bottom:0.8rem;display:none;background:rgba(34,197,94,0.08);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(34,197,94,0.2);"></div>
+        <button class="submit-btn" id="verifyBtn" onclick="handleVerify()">Confirm Account →</button>
+        <div class="tab-switch" style="gap:1rem;">
+          <button onclick="resendSignupCode()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;cursor:pointer;">Resend code</button>
+          <button onclick="showSignup()" style="background:none;border:none;color:var(--muted);font-size:0.82rem;cursor:pointer;">← Back</button>
+        </div>
       </div>
+
     </div>
-  </div>
   </div>
 </div>
 

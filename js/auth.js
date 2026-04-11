@@ -24,8 +24,15 @@ async function initNavAuth() {
 
     if (signInBtn)  signInBtn.style.display  = 'none';
     if (navUser)    navUser.classList.add('visible');
-    if (navAvatar)  navAvatar.textContent  = initials;
-    if (navName)    navName.textContent    = name;
+    const avatarUrl = user.user_metadata?.avatar_url;
+    if (navAvatar) {
+      if (avatarUrl) {
+        navAvatar.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      } else {
+        navAvatar.textContent = initials;
+      }
+    }
+    if (navName) navName.textContent = name;
     if (dropName)   dropName.textContent   = name;
     if (dropEmail)  dropEmail.textContent  = email;
 

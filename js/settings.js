@@ -17,6 +17,13 @@ async function initSettings() {
   document.getElementById('settingsEmail').textContent = user.email;
   document.getElementById('inputName').value = name;
   document.getElementById('inputEmail').value = user.email;
+
+  // Load avatar if exists
+  const avatarUrl = user.user_metadata?.avatar_url;
+  if (avatarUrl) {
+    showAvatarImage(avatarUrl);
+  }
+
   const darkToggle = document.getElementById('darkModeToggle');
   if (darkToggle) darkToggle.checked = !document.body.classList.contains('light');
   await checkMFAStatus();
@@ -247,4 +254,95 @@ async function disableMFA() {
 function cancelDisableMFA() {
   document.getElementById('mfaDisable').style.display = 'none';
   document.getElementById('mfaDisableCode').value = '';
+}
+
+// ── Avatar ──
+function showAvatarImage(url) {
+  const img = document.getElementById('settingsAvatarImg');
+  const initDiv = document.getElementById('settingsAvatar');
+  const navAvatar = document.getElementById('userAvatar');
+  if (img && initDiv) {
+    img.src = url;
+    img.style.display = 'block';
+    initDiv.style.display = 'none';
+  }
+  // Also update sidebar avatar
+  if (navAvatar) {
+    navAvatar.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='?'">`;
+  }
+}
+
+function compressImage(file, maxSizePx, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxSizePx || h > maxSizePx) {
+          if (w > h) { h = Math.round(h * maxSizePx / w); w = maxSizePx; }
+          else       { w = Math.round(w * maxSizePx / h); h = maxSizePx; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    document.getElementById('avatarMsg').textContent = '⚠️ Please select an image file.';
+    document.getElementById('avatarMsg').style.color = '#ef4444';
+    return;
+  }
+
+  document.getElementById('avatarMsg').textContent = 'Processing...';
+  document.getElementById('avatarMsg').style.color = 'var(--muted)';
+
+  // Auto-compress to max 400px and 0.85 quality
+  const compressed = await compressImage(file, 400, 0.85);
+
+  const { data: { session } } = await _supabase.auth.getSession();
+  const userId = session.user.id;
+  const filePath = userId + "/avatar.jpg";
+
+  // Upload to Supabase Storage
+  document.getElementById('avatarMsg').textContent = 'Uploading...';
+  const { error: uploadError } = await _supabase.storage
+    .from('avatars')
+    .upload(filePath, compressed, { upsert: true, contentType: 'image/jpeg' });
+
+  if (uploadError) {
+    document.getElementById('avatarMsg').textContent = '⚠️ ' + uploadError.message;
+    document.getElementById('avatarMsg').style.color = '#ef4444';
+    return;
+  }
+
+  // Get public URL
+  const { data: urlData } = _supabase.storage.from('avatars').getPublicUrl(filePath);
+  const publicUrl = urlData.publicUrl + '?t=' + Date.now(); // cache bust
+
+  // Save URL to user metadata
+  const { error: updateError } = await _supabase.auth.updateUser({
+    data: { avatar_url: publicUrl }
+  });
+
+  if (updateError) {
+    document.getElementById('avatarMsg').textContent = '⚠️ ' + updateError.message;
+    document.getElementById('avatarMsg').style.color = '#ef4444';
+    return;
+  }
+
+  showAvatarImage(publicUrl);
+  document.getElementById('avatarMsg').textContent = '✓ Photo updated!';
+  document.getElementById('avatarMsg').style.color = '#22c55e';
+  setTimeout(() => { document.getElementById('avatarMsg').textContent = ''; }, 3000);
 }

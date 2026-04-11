@@ -15,7 +15,14 @@ async function initDashboard() {
 
   document.getElementById('userName').textContent = name;
   document.getElementById('userEmail').textContent = user.email;
-  document.getElementById('userAvatar').textContent = initials;
+
+  const avatarUrl = user.user_metadata?.avatar_url;
+  const avatarEl = document.getElementById('userAvatar');
+  if (avatarUrl && avatarEl) {
+    avatarEl.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='' + initials + ''">';
+  } else {
+    avatarEl.textContent = initials;
+  }
 
   renderTable();
   renderBarChart();

@@ -2,10 +2,7 @@ const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ⚠️ Change this to your Render.com URL after deployment
-// Local:   'http://127.0.0.1:8000'
-// Render:  'https://pdas-engine.onrender.com'
-const API_BASE = 'https://pdas-engine.onrender.com';
+const API_BASE = 'http://127.0.0.1:8000'; // Change to your deployed server URL
 
 let _allEvents = [];
 let _activeFilter = 'all';
@@ -28,8 +25,7 @@ async function initDashboard() {
   document.getElementById('userName').textContent = name;
   document.getElementById('userEmail').textContent = user.email;
 
-  await loadAllData();   // Always load from Supabase first
-  await checkAPIStatus(); // Then check if engine is available for scanning
+  await checkAPIStatus();
 }
 
 async function logout() {
@@ -37,7 +33,7 @@ async function logout() {
   window.location.href = 'login.html';
 }
 
-// ── API Status (just checks if engine is online for scanning) ──
+// ── API Status + load data ──
 async function checkAPIStatus() {
   const el = document.getElementById('apiStatus');
   const txt = document.getElementById('apiStatusText');
@@ -45,74 +41,49 @@ async function checkAPIStatus() {
     const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(4000) });
     if (r.ok) {
       el.className = 'api-status online';
-      txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
+      txt.textContent = '✓ PDAS Engine is online — scan history loaded from engine';
+      await loadAllData();
     } else { throw new Error(); }
   } catch {
     el.className = 'api-status offline';
-    txt.textContent = '✗ PDAS Engine offline — scan history still available. Start engine to run new scans.';
+    txt.textContent = '✗ PDAS Engine offline — showing placeholder data. Start engine with: uvicorn model_service.app.main:app --port 8000';
+    loadPlaceholderData();
   }
 }
 
-// ── Load data from Supabase (persistent storage) ──
+// ── Load real data from engine ──
 async function loadAllData() {
-  const { data: { session } } = await _supabase.auth.getSession();
-  if (!session) return;
+  try {
+    const r = await fetch(`${API_BASE}/events?limit=100`);
+    const events = await r.json();
+    _allEvents = events;
 
-  const { data: scans, error } = await _supabase
-    .from('scan_logs')
-    .select('*')
-    .eq('user_id', session.user.id)
-    .order('scanned_at', { ascending: false })
-    .limit(100);
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = 'Last updated: ' + now.toLocaleTimeString();
 
-  if (error) {
-    console.warn('scan_logs table not found — run SQL setup or use the engine locally:', error.message);
-    // Show empty state instead of crashing
-    document.getElementById('lastUpdated').textContent = 'No scan history yet — run your first scan!';
-    document.getElementById('statTotal').textContent = '0';
-    document.getElementById('statAllow').textContent = '0';
-    document.getElementById('statWarn').textContent  = '0';
-    document.getElementById('statBlock').textContent = '0';
-    document.getElementById('statTotalSub').textContent = 'Run a scan below to get started';
-    document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">No scans yet. Use the Quick Scan panel below!</td></tr>';
-    document.getElementById('activityList').innerHTML = '<div style="color:var(--muted);text-align:center;padding:1rem;font-size:0.85rem;">No activity yet.</div>';
-    renderBarChart([]);
-    return;
+    // Stats
+    const total = events.length;
+    const allow = events.filter(e => e.verdict === 'allow').length;
+    const warn  = events.filter(e => e.verdict === 'warn').length;
+    const block = events.filter(e => e.verdict === 'block').length;
+
+    document.getElementById('statTotal').textContent = total.toLocaleString();
+    document.getElementById('statAllow').textContent = allow;
+    document.getElementById('statWarn').textContent  = warn;
+    document.getElementById('statBlock').textContent = block;
+    document.getElementById('statTotalSub').textContent = 'From PDAS engine database';
+    document.getElementById('statAllowPct').textContent = total ? Math.round(allow/total*100) + '% of total' : '';
+    document.getElementById('statWarnPct').textContent  = total ? Math.round(warn/total*100) + '% of total' : '';
+    document.getElementById('statBlockPct').textContent = total ? Math.round(block/total*100) + '% of total' : '';
+
+    updateDonut(allow, warn, block, total);
+    renderBarChart(events);
+    renderTable(events, _activeFilter);
+    renderActivity(events);
+
+  } catch (err) {
+    console.error('Failed to load events:', err);
   }
-
-  // Normalize field names to match display code
-  const events = (scans || []).map(s => ({
-    id: s.id,
-    type: s.type,
-    target: s.target,
-    verdict: s.verdict,
-    score: s.score,
-    signals: s.signals,
-    timestamp: s.scanned_at,
-  }));
-
-  _allEvents = events;
-  const now = new Date();
-  document.getElementById('lastUpdated').textContent = 'Last updated: ' + now.toLocaleTimeString();
-
-  const total = events.length;
-  const allow = events.filter(e => e.verdict === 'allow').length;
-  const warn  = events.filter(e => e.verdict === 'warn').length;
-  const block = events.filter(e => e.verdict === 'block').length;
-
-  document.getElementById('statTotal').textContent = total.toLocaleString();
-  document.getElementById('statAllow').textContent = allow;
-  document.getElementById('statWarn').textContent  = warn;
-  document.getElementById('statBlock').textContent = block;
-  document.getElementById('statTotalSub').textContent = total ? 'Saved scan history' : 'No scans yet — run your first scan!';
-  document.getElementById('statAllowPct').textContent = total ? Math.round(allow/total*100) + '% of total' : '';
-  document.getElementById('statWarnPct').textContent  = total ? Math.round(warn/total*100) + '% of total' : '';
-  document.getElementById('statBlockPct').textContent = total ? Math.round(block/total*100) + '% of total' : '';
-
-  updateDonut(allow, warn, block, total);
-  renderBarChart(events);
-  renderTable(events, _activeFilter);
-  renderActivity(events);
 }
 
 // ── Donut chart ──
@@ -301,53 +272,37 @@ async function scanFile(file) {
 }
 
 function buildResultHTML(data, target, type) {
-  // Normalize verdict — engine returns allow/warn/block
-  // Map to Low/Medium/High risk levels
-  const rawVerdict = (data.verdict || '').toLowerCase();
-  const v = rawVerdict === 'block' ? 'block' : rawVerdict === 'warn' ? 'warn' : 'allow';
-  const score = parseFloat(data.score) || 0;
-
-  // Risk level labeling
-  const riskLevel = score >= 80 ? 'HIGH RISK' : score >= 50 ? 'MEDIUM RISK' : 'LOW RISK';
-  const icons     = { allow:'✅', warn:'⚠️', block:'🚫' };
-  const labels    = { allow:'Safe', warn:'Suspicious', block:'Dangerous' };
+  const v = data.verdict;
+  const icons = { allow:'✅', warn:'⚠️', block:'🚫' };
+  const labels = { allow:'Safe', warn:'Suspicious', block:'Dangerous' };
   const barColors = { allow:'#22c55e', warn:'#f59e0b', block:'#ef4444' };
-  const messages  = {
+  const messages = {
     allow: 'No significant phishing indicators found. This appears safe.',
     warn:  'Some suspicious patterns detected. Proceed with caution.',
-    block: 'Clear phishing indicators found. This is likely a phishing attack!'
+    block: 'Clear phishing indicators found. This is dangerous!'
   };
-  const levelColors = { allow:'#22c55e', warn:'#f59e0b', block:'#ef4444' };
-
-  const rules = (data.signals && data.signals.rules) ? data.signals.rules : {};
-  const tags = Object.keys(rules).filter(k => rules[k] === true).map(k =>
-    '<span class="signal-tag bad">' + k.replace(/_/g,' ') + '</span>'
+  const rules = data.signals?.rules || {};
+  const tags = Object.keys(rules).filter(k => rules[k]).map(k =>
+    `<span class="signal-tag bad">${k.replace(/_/g,' ')}</span>`
   ).join('');
-
-  const icon   = icons[v]   || '❓';
-  const label  = labels[v]  || 'Unknown';
-  const msg    = messages[v] || '';
-  const color  = barColors[v] || '#7a8499';
-
-  return '<div class="result-card ' + v + '">' +
-    '<div class="result-header">' +
-      '<div class="result-icon">' + icon + '</div>' +
-      '<div>' +
-        '<div class="result-verdict">' + label + '</div>' +
-        '<div style="font-size:0.75rem;font-family:Syne,sans-serif;font-weight:700;color:' + levelColors[v] + ';letter-spacing:0.08em;margin-top:0.15rem;">' + riskLevel + '</div>' +
-        '<div style="font-size:0.82rem;color:var(--muted);margin-top:0.2rem;">' + msg + '</div>' +
-      '</div>' +
-      '<div class="result-score-wrap">' +
-        '<div class="result-score-num">' + score.toFixed(1) + '</div>' +
-        '<div class="result-score-label">Risk Score / 100</div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="result-target">' + (type==='url'?'🔗':'📄') + ' ' + target + '</div>' +
-    '<div class="score-bar-wrap">' +
-      '<div class="score-bar-bg"><div class="score-bar-fill" style="width:' + Math.min(score,100) + '%;background:' + color + ';"></div></div>' +
-    '</div>' +
-    (tags ? '<div style="margin-top:0.75rem;"><div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">Detected signals:</div><div class="result-signals">' + tags + '</div></div>' : '') +
-  '</div>';
+  return `<div class="result-card ${v}">
+    <div class="result-header">
+      <div class="result-icon">${icons[v]}</div>
+      <div>
+        <div class="result-verdict">${labels[v]}</div>
+        <div style="font-size:0.82rem;color:var(--muted);margin-top:0.2rem;">${messages[v]}</div>
+      </div>
+      <div class="result-score-wrap">
+        <div class="result-score-num">${data.score}</div>
+        <div class="result-score-label">Risk Score / 100</div>
+      </div>
+    </div>
+    <div class="result-target">${type==='url'?'🔗':'📄'} ${target}</div>
+    <div class="score-bar-wrap">
+      <div class="score-bar-bg"><div class="score-bar-fill" style="width:${data.score}%;background:${barColors[v]};"></div></div>
+    </div>
+    ${tags ? `<div style="margin-top:0.75rem;"><div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">Detected signals:</div><div class="result-signals">${tags}</div></div>` : ''}
+  </div>`;
 }
 
 function buildErrorHTML(msg) {
@@ -364,7 +319,7 @@ async function saveScanToSupabase(type, target, data) {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) return;
     const { data: profile } = await _supabase.from('profiles').select('company_id').eq('id', session.user.id).single();
-    const { error: insertErr } = await _supabase.from('scan_logs').insert({
+    await _supabase.from('scan_logs').insert({
       user_id: session.user.id,
       company_id: profile?.company_id || null,
       type, target,
@@ -372,7 +327,6 @@ async function saveScanToSupabase(type, target, data) {
       score: data.score,
       signals: data.signals
     });
-    if (insertErr) console.warn('Could not save to scan_logs (run SQL setup):', insertErr.message);
   } catch(e) { console.log('Could not save scan to Supabase:', e); }
 }
 document.addEventListener('DOMContentLoaded', initDashboard);

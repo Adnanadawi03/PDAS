@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Create Company</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/login.css">
+<style>
+  .step-wrap { display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem; }
+  .step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; font-family:'Syne',sans-serif; flex-shrink:0; }
+  .step-dot.done { background:var(--low); color:#fff; }
+  .step-dot.active { background:var(--accent); color:#000; }
+  .step-dot.pending { background:var(--border); color:var(--muted); }
+  .step-line { flex:1; height:2px; background:var(--border); }
+  .step-line.done { background:var(--low); }
+  .code-display { background:var(--bg2); border:2px solid rgba(0,229,255,0.3); border-radius:14px; padding:1.5rem; text-align:center; margin:1rem 0; }
+  .code-big { font-family:'Syne',sans-serif; font-size:2.5rem; font-weight:800; color:var(--accent); letter-spacing:0.25em; }
+  .code-hint { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+  .copy-btn { background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); color:var(--accent); padding:0.4rem 1rem; border-radius:8px; cursor:pointer; font-size:0.82rem; margin-top:0.75rem; }
+</style>
+</head>
+<body>
+<header>
+<nav>
+  <a class="nav-logo" href="index.html">PDAS <span class="nav-subtitle">Phishing Detection &amp; Awareness System</span></a>
+  <div style="display:flex;align-items:center;gap:0.75rem;">
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
+  </div>
+</nav>
+</header>
+
+<div class="page-wrap">
+  <div class="grid-bg"></div>
+  <div class="bg-glow"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:460px;position:relative;z-index:10;">
+    <div class="auth-box" style="width:100%;">
+      <div class="auth-logo">PDAS</div>
+      <div class="auth-tagline">Create a Company Account</div>
+
+      <!-- STEP INDICATOR -->
+      <div class="step-wrap">
+        <div class="step-dot active" id="s1">1</div>
+        <div class="step-line" id="l1"></div>
+        <div class="step-dot pending" id="s2">2</div>
+        <div class="step-line" id="l2"></div>
+        <div class="step-dot pending" id="s3">3</div>
+      </div>
+
+      <!-- STEP 1: Admin account -->
+      <div id="step1">
+        <h3 style="font-family:Syne,sans-serif;font-size:1rem;font-weight:700;margin-bottom:1.2rem;">Step 1 — Create Admin Account</h3>
+        <div class="form-group">
+          <label>YOUR FULL NAME</label>
+          <input type="text" id="adminName" placeholder="Admin name">
+        </div>
+        <div class="form-group">
+          <label>EMAIL ADDRESS</label>
+          <input type="email" id="adminEmail" placeholder="admin@company.com">
+        </div>
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" id="adminPw" placeholder="••••••••">
+        </div>
+        <div id="s1Error" style="display:none;color:#ef4444;font-size:0.82rem;background:rgba(239,68,68,0.08);padding:0.6rem;border-radius:8px;margin-bottom:0.8rem;"></div>
+        <button class="submit-btn" onclick="step1Next()">Next →</button>
+        <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--muted);">
+          Already have an account? <a href="login.html" style="color:var(--accent);">Sign In</a>
+        </div>
+      </div>
+
+      <!-- STEP 2: Company info -->
+      <div id="step2" style="display:none;">
+        <h3 style="font-family:Syne,sans-serif;font-size:1rem;font-weight:700;margin-bottom:1.2rem;">Step 2 — Company Details</h3>
+        <div class="form-group">
+          <label>COMPANY NAME</label>
+          <input type="text" id="companyName" placeholder="e.g. Acme Corp">
+        </div>
+        <div id="s2Error" style="display:none;color:#ef4444;font-size:0.82rem;background:rgba(239,68,68,0.08);padding:0.6rem;border-radius:8px;margin-bottom:0.8rem;"></div>
+        <button class="submit-btn" id="s2Btn" onclick="step2Create()">Create Company →</button>
+      </div>
+
+      <!-- STEP 3: Company code -->
+      <div id="step3" style="display:none;">
+        <h3 style="font-family:Syne,sans-serif;font-size:1rem;font-weight:700;margin-bottom:0.5rem;">✅ Company Created!</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">Share this code with your employees so they can join your company on PDAS:</p>
+        <div class="code-display">
+          <div class="code-big" id="companyCodeDisplay"></div>
+          <div class="code-hint">Company Join Code</div>
+          <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
+        </div>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.2rem;">Employees enter this code when signing up. You can always find it in your admin settings.</p>
+        <button class="submit-btn" onclick="window.location.href='admin-dashboard.html'">Go to Admin Dashboard →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/theme.js"></script>
+<script>
+const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let _adminSession = null;
+
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i).style.display = i===n ? 'block' : 'none';
+    const dot = document.getElementById('s'+i);
+    dot.className = 'step-dot ' + (i<n?'done':i===n?'active':'pending');
+    if (i < 3) document.getElementById('l'+i).className = 'step-line ' + (i<n?'done':'');
+  });
+}
+
+async function step1Next() {
+  const name = document.getElementById('adminName').value.trim();
+  const email = document.getElementById('adminEmail').value.trim();
+  const pw = document.getElementById('adminPw').value;
+  const err = document.getElementById('s1Error');
+  err.style.display = 'none';
+  if (!name||!email||!pw) { err.textContent='Please fill all fields.'; err.style.display='block'; return; }
+  if (pw.length < 8) { err.textContent='Password must be at least 8 characters.'; err.style.display='block'; return; }
+
+  const btn = event.target; btn.textContent='Creating...'; btn.disabled=true;
+  const { data, error } = await _supabase.auth.signUp({ email, password:pw, options:{ data:{ full_name:name } } });
+  if (error) { err.textContent=error.message; err.style.display='block'; btn.textContent='Next →'; btn.disabled=false; return; }
+
+  // Sign in immediately (skip email confirm for admin)
+  const { data: signIn, error: signInErr } = await _supabase.auth.signInWithPassword({ email, password:pw });
+  if (signInErr) {
+    // If email confirm required, still proceed
+    _adminSession = data.session;
+  } else {
+    _adminSession = signIn.session;
+  }
+  btn.textContent='Next →'; btn.disabled=false;
+  goStep(2);
+}
+
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:8}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+async function step2Create() {
+  const name = document.getElementById('companyName').value.trim();
+  const err = document.getElementById('s2Error');
+  err.style.display = 'none';
+  if (!name) { err.textContent='Please enter your company name.'; err.style.display='block'; return; }
+
+  const btn = document.getElementById('s2Btn');
+  btn.textContent = 'Creating...'; btn.disabled = true;
+
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) { err.textContent='Session expired. Please go back and sign up again.'; err.style.display='block'; btn.textContent='Create Company →'; btn.disabled=false; return; }
+
+  const code = generateCode();
+
+  // Create company
+  const { data: company, error: compErr } = await _supabase
+    .from('companies')
+    .insert({ name, code, admin_id: session.user.id })
+    .select().single();
+
+  if (compErr) { err.textContent=compErr.message; err.style.display='block'; btn.textContent='Create Company →'; btn.disabled=false; return; }
+
+  // Update profile to admin role + company
+  await _supabase.from('profiles').upsert({
+    id: session.user.id,
+    full_name: session.user.user_metadata?.full_name,
+    company_id: company.id,
+    role: 'admin'
+  });
+
+  document.getElementById('companyCodeDisplay').textContent = code;
+  btn.textContent = 'Create Company →'; btn.disabled = false;
+  goStep(3);
+}
+
+function copyCode() {
+  const code = document.getElementById('companyCodeDisplay').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Code', 2000);
+  });
+}
+</script>
+</body>
+</html>

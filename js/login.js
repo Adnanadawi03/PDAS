@@ -96,7 +96,13 @@ async function handleLogin() {
       return;
     }
   }
-  window.location.href = 'dashboard.html';
+  // Check if admin → redirect to admin dashboard
+  const { data: profile } = await _supabase.from('profiles').select('role').eq('id', data.user.id).single();
+  if (profile?.role === 'admin') {
+    window.location.href = 'admin-dashboard.html';
+  } else {
+    window.location.href = 'dashboard.html';
+  }
 }
 
 async function handleMFAChallenge() {
@@ -139,7 +145,9 @@ async function handleSignup() {
   if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
   if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
   btn.textContent = 'Creating account...'; btn.disabled = true;
-  const { error } = await _supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
+  const companyCode = (document.getElementById('signupCode')?.value || '').trim().toUpperCase();
+
+  const { error } = await _supabase.auth.signUp({ email, password, options: { data: { full_name: name, company_code: companyCode } } });
   if (error) {
     errEl.textContent = error.message; errEl.style.display = 'block';
     btn.textContent = 'Create Account →'; btn.disabled = false;

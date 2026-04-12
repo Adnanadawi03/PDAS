@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Admin Dashboard</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/scan.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">PDAS<span style="color:var(--accent2);">admin</span></div>
+  <nav class="sidebar-nav">
+    <a href="admin-dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Overview</a>
+    <a href="#" class="nav-item" onclick="showSection('employees',event)"><span class="nav-icon">👥</span> Employees</a>
+    <a href="#" class="nav-item" onclick="showSection('scans',event)"><span class="nav-icon">🔍</span> All Scans</a>
+    <a href="#" class="nav-item" onclick="showSection('alerts',event)"><span class="nav-icon">🚨</span> Alerts</a>
+    <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+    <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Website</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="userAvatar" style="background:linear-gradient(135deg,var(--accent2),var(--accent3));">A</div>
+      <div>
+        <div class="user-name" id="userName">Admin</div>
+        <div class="user-role" style="color:var(--accent2);font-size:0.72rem;">ADMINISTRATOR</div>
+      </div>
+    </div>
+    <button onclick="doLogout()" class="signout-btn">Sign Out</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div>
+        <h1 class="page-title">Admin Dashboard</h1>
+        <div class="page-sub" id="companyLabel">Loading company...</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      <div class="admin-code-badge" id="codeBadge" onclick="copyCode()" title="Click to copy">
+        <span style="font-size:0.7rem;color:var(--muted);">JOIN CODE</span>
+        <span id="codeDisplay" style="font-family:'Syne',sans-serif;font-weight:800;color:var(--accent);letter-spacing:0.1em;">—</span>
+        <span style="font-size:0.7rem;color:var(--muted);">📋</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW SECTION -->
+  <div id="section-overview">
+    <!-- STATS -->
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card total"><div class="stat-label">Total Employees</div><div class="stat-num total" id="statEmployees">—</div></div>
+      <div class="stat-card safe"><div class="stat-label">Total Scans</div><div class="stat-num safe" id="statScans">—</div></div>
+      <div class="stat-card warn"><div class="stat-label">Threats Detected</div><div class="stat-num warn" id="statThreats">—</div></div>
+      <div class="stat-card danger"><div class="stat-label">Blocked</div><div class="stat-num danger" id="statBlocked">—</div></div>
+    </div>
+
+    <!-- EMPLOYEE RISK TABLE -->
+    <div class="grid-2" style="margin-bottom:1.5rem;">
+      <div class="card">
+        <div class="card-title">Employee Risk Overview <span>By scan activity</span></div>
+        <table class="scan-table" id="employeeTable">
+          <thead><tr><th>Employee</th><th>Scans</th><th>Threats</th><th>Risk Level</th><th>Last Active</th></tr></thead>
+          <tbody id="employeeBody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Threats <span>Company-wide</span></div>
+        <div id="threatFeed"><div style="color:var(--muted);text-align:center;padding:2rem;font-size:0.85rem;">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- COMPANY CODE CARD -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Company Join Code</div>
+      <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--accent);letter-spacing:0.2em;background:var(--bg2);padding:1rem 2rem;border-radius:14px;border:2px solid rgba(0,229,255,0.2);" id="bigCode">—</div>
+        </div>
+        <div style="flex:1;">
+          <p style="font-size:0.9rem;color:var(--muted);margin-bottom:0.75rem;">Share this code with employees. When they sign up on PDAS, they enter this code to join your company dashboard.</p>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="scan-btn" onclick="copyCode()" style="padding:0.6rem 1.2rem;">📋 Copy Code</button>
+            <button class="filter-btn active" onclick="regenerateCode()">↻ New Code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEES SECTION -->
+  <div id="section-employees" style="display:none;">
+    <div class="card">
+      <div class="card-title">All Employees <span id="empCount"></span></div>
+      <table class="scan-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Total Scans</th><th>Threats</th><th>Joined</th><th>Action</th></tr></thead>
+        <tbody id="fullEmployeeBody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALL SCANS SECTION -->
+  <div id="section-scans" style="display:none;">
+    <div class="card">
+      <div class="card-title">All Company Scans <span id="allScansCount"></span></div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterScans(this,'all')">All</button>
+        <button class="filter-btn" onclick="filterScans(this,'block')">Dangerous</button>
+        <button class="filter-btn" onclick="filterScans(this,'warn')">Suspicious</button>
+        <button class="filter-btn" onclick="filterScans(this,'allow')">Safe</button>
+      </div>
+      <table class="scan-table">
+        <thead><tr><th>Employee</th><th>Target</th><th>Type</th><th>Score</th><th>Verdict</th><th>Time</th></tr></thead>
+        <tbody id="allScansBody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALERTS SECTION -->
+  <div id="section-alerts" style="display:none;">
+    <div class="card">
+      <div class="card-title">Security Alerts <span style="color:#ef4444;">High risk events only</span></div>
+      <div id="alertsList"><div style="color:var(--muted);text-align:center;padding:2rem;">Loading...</div></div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/theme.js"></script>
+<script src="js/admin.js"></script>
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+function showSection(id, e) {
+  if (e) e.preventDefault();
+  ['overview','employees','scans','alerts'].forEach(s => {
+    document.getElementById('section-'+s).style.display = s===id ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (e) e.target.closest('.nav-item').classList.add('active');
+  if (window.innerWidth<=768) closeSidebar();
+}
+</script>
+</body>
+</html>

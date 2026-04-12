@@ -106,6 +106,10 @@
           <input type="email" placeholder="you@example.com" id="signupEmail">
         </div>
         <div class="form-group">
+          <label>COMPANY CODE <span style="color:var(--muted);font-weight:400;font-size:0.75rem;">(optional — get from your admin)</span></label>
+          <input type="text" placeholder="e.g. ACME1234" id="signupCode" style="letter-spacing:0.1em;text-transform:uppercase;">
+        </div>
+        <div class="form-group">
           <label>PASSWORD</label>
           <input type="password" placeholder="••••••••" id="signupPw" oninput="checkStrength(this.value)">
           <div class="strength-bar" style="margin-top:0.4rem;">
@@ -150,6 +154,10 @@
         </div>
       </div>
 
+    </div>
+    <div style="text-align:center;padding:1rem 0;font-size:0.83rem;color:var(--muted);">
+      Are you a company admin? 
+      <a href="admin-register.html" style="color:var(--accent);font-weight:600;">Create a Company Account →</a>
     </div>
   </div>
 </div>

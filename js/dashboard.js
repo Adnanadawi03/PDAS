@@ -209,7 +209,7 @@ function renderActivity(events) {
     const ago = timeAgo(new Date(e.timestamp));
     return `<div class="activity-item">
       <div class="act-icon ${classes[e.verdict]}">${icons[e.verdict]}</div>
-      <div><div class="act-text">${msgs[e.verdict](e)}</div><div class="act-time">${ago}</div></div>
+      <div><div class="act-text">${msgs[e.verdict] ? msgs[e.verdict](e) : e.target}</div><div class="act-time">${ago}</div></div>
     </div>`;
   }).join('');
 }

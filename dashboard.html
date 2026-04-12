@@ -6,6 +6,7 @@
 <title>PDAS – Dashboard</title>
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/scan.css">
 </head>
 <body>
 
@@ -15,6 +16,7 @@
   <div class="sidebar-logo">PDAS<span>.</span></div>
   <nav class="sidebar-nav">
     <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="#" class="nav-item" onclick="scrollToScan(event)"><span class="nav-icon">🔍</span> Scan</a>
     <a href="#" class="nav-item"><span class="nav-icon">📧</span> Email Scans</a>
     <a href="#" class="nav-item"><span class="nav-icon">📎</span> File Scans</a>
     <a href="#" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
@@ -35,79 +37,144 @@
 </aside>
 
 <main class="main">
+
+  <!-- TOPBAR -->
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:0.75rem;">
-      <button class="menu-toggle" id="menuToggleBtn" onclick="toggleSidebar()">☰</button>
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <div>
         <h1 class="page-title">Security Dashboard</h1>
-        <div class="page-sub">Last updated: Today at 14:33</div>
+        <div class="page-sub" id="lastUpdated">Loading...</div>
       </div>
     </div>
     <div class="topbar-right">
       <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-      <div class="notif-btn"><span>🔔</span><div class="notif-dot"></div></div>
-      <button class="scan-btn">⚡ Run Scan</button>
+      <div class="notif-btn" id="alertBell" style="position:relative;">
+        <span>🔔</span>
+        <div class="notif-dot" id="notifDot" style="display:none;"></div>
+      </div>
+      <button class="scan-btn" onclick="scrollToScan()">⚡ Run Scan</button>
     </div>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card total"><div class="stat-label">Total Scanned</div><div class="stat-num total">1,284</div><div class="stat-change up">↑ 12% this week</div></div>
-    <div class="stat-card safe"><div class="stat-label">Safe (Low Risk)</div><div class="stat-num safe">1,021</div><div class="stat-change">79.5% of total</div></div>
-    <div class="stat-card warn"><div class="stat-label">Caution (Medium)</div><div class="stat-num warn">189</div><div class="stat-change up">↑ 5% vs last week</div></div>
-    <div class="stat-card danger"><div class="stat-label">Dangerous (High)</div><div class="stat-num danger">74</div><div class="stat-change down">↓ 3% vs last week</div></div>
+  <!-- API STATUS BAR -->
+  <div id="apiStatus" class="api-status checking" style="margin-bottom:1.5rem;">
+    <span class="api-dot"></span>
+    <span id="apiStatusText">Checking PDAS Engine connection...</span>
+    <button onclick="checkAPIStatus()" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.8rem;">↻ Retry</button>
   </div>
 
+  <!-- STAT CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card total"><div class="stat-label">Total Scanned</div><div class="stat-num total" id="statTotal">—</div><div class="stat-change" id="statTotalSub">Loading...</div></div>
+    <div class="stat-card safe"><div class="stat-label">Safe (Allow)</div><div class="stat-num safe" id="statAllow">—</div><div class="stat-change" id="statAllowPct"></div></div>
+    <div class="stat-card warn"><div class="stat-label">Suspicious (Warn)</div><div class="stat-num warn" id="statWarn">—</div><div class="stat-change" id="statWarnPct"></div></div>
+    <div class="stat-card danger"><div class="stat-label">Dangerous (Block)</div><div class="stat-num danger" id="statBlock">—</div><div class="stat-change" id="statBlockPct"></div></div>
+  </div>
+
+  <!-- CHARTS ROW -->
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">Weekly Scan Activity <span>Last 7 days</span></div>
+      <div class="card-title">Scan Activity <span>Last 30 events</span></div>
       <div class="bar-chart" id="barChart"></div>
     </div>
     <div class="card">
-      <div class="card-title">Threat Distribution <span>All time</span></div>
+      <div class="card-title">Threat Distribution <span id="donutTotal"></span></div>
       <div class="donut-wrap">
-        <svg width="110" height="110" viewBox="0 0 110 110">
+        <svg width="110" height="110" viewBox="0 0 110 110" id="donutSvg">
           <circle cx="55" cy="55" r="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="18"/>
-          <circle cx="55" cy="55" r="40" fill="none" stroke="#22c55e" stroke-width="18" stroke-dasharray="200 251" stroke-dashoffset="-5" stroke-linecap="round"/>
-          <circle cx="55" cy="55" r="40" fill="none" stroke="#f59e0b" stroke-width="18" stroke-dasharray="37 251" stroke-dashoffset="-210" stroke-linecap="round"/>
-          <circle cx="55" cy="55" r="40" fill="none" stroke="#ef4444" stroke-width="18" stroke-dasharray="14 251" stroke-dashoffset="-251" stroke-linecap="round"/>
-          <text x="55" y="50" text-anchor="middle" fill="#e8eaf0" font-family="Syne,sans-serif" font-size="14" font-weight="700">74</text>
-          <text x="55" y="64" text-anchor="middle" fill="#7a8499" font-size="9">threats</text>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#22c55e" stroke-width="18" stroke-dasharray="200 251" stroke-dashoffset="-5" stroke-linecap="round" id="donutAllow"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#f59e0b" stroke-width="18" stroke-dasharray="37 251" stroke-dashoffset="-210" stroke-linecap="round" id="donutWarn"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#ef4444" stroke-width="18" stroke-dasharray="14 251" stroke-dashoffset="-251" stroke-linecap="round" id="donutBlock"/>
+          <text x="55" y="50" text-anchor="middle" fill="#e8eaf0" font-family="Syne,sans-serif" font-size="14" font-weight="700" id="donutNum">0</text>
+          <text x="55" y="64" text-anchor="middle" fill="#7a8499" font-size="9">total</text>
         </svg>
         <div class="donut-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Low Risk — 79.5%</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Medium Risk — 14.7%</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> High Risk — 5.8%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Safe — <span id="lgAllow">0%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Suspicious — <span id="lgWarn">0%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Dangerous — <span id="lgBlock">0%</span></div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- SCAN PANEL -->
+  <div id="scanSection" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">⚡ Quick Scan</div>
+
+      <!-- SCAN TABS -->
+      <div class="scan-tabs" style="margin-bottom:1.2rem;">
+        <button class="scan-tab active" id="tabUrl" onclick="switchScanTab('url')">🔗 URL</button>
+        <button class="scan-tab" id="tabFile" onclick="switchScanTab('file')">📎 File</button>
+      </div>
+
+      <!-- URL INPUT -->
+      <div id="urlPanel">
+        <div class="url-input-wrap">
+          <span class="url-icon">🔗</span>
+          <input type="text" id="urlInput" placeholder="Paste URL to scan — e.g. https://suspicious-site.xyz" class="url-input" onkeydown="if(event.key==='Enter') scanURL()">
+          <button class="scan-go-btn" onclick="scanURL()" id="urlScanBtn">Scan →</button>
+        </div>
+        <div class="url-examples" style="margin-top:0.6rem;">
+          <span style="color:var(--muted);font-size:0.78rem;">Try:</span>
+          <button class="example-btn" onclick="setUrl('http://paypa1.com/verify-account@user')">Phishing URL</button>
+          <button class="example-btn" onclick="setUrl('https://google.com')">Safe URL</button>
+        </div>
+      </div>
+
+      <!-- FILE INPUT -->
+      <div id="filePanel" style="display:none;">
+        <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          <div class="drop-icon">📁</div>
+          <div class="drop-text">Drop file here or <span style="color:var(--accent);">click to browse</span></div>
+          <div class="drop-sub">PDF, EXE, DOCX, XLSX, ZIP — max 10MB</div>
+          <input type="file" id="fileInput" style="display:none;" onchange="scanFile(this.files[0])">
+        </div>
+      </div>
+
+      <!-- SCAN RESULT -->
+      <div id="scanResult" style="margin-top:1rem;"></div>
+    </div>
+  </div>
+
+  <!-- RECENT SCANS TABLE + LIVE ACTIVITY -->
   <div class="grid-3-1">
     <div class="card">
-      <div class="card-title">Recent Scans <span>Showing 8 of 247</span></div>
+      <div class="card-title">
+        Recent Scans
+        <span id="scanCount">Loading from PDAS engine...</span>
+      </div>
       <div class="filter-bar">
         <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
-        <button class="filter-btn" onclick="setFilter(this,'HIGH')">High Risk</button>
-        <button class="filter-btn" onclick="setFilter(this,'MEDIUM')">Medium</button>
-        <button class="filter-btn" onclick="setFilter(this,'LOW')">Low</button>
+        <button class="filter-btn" onclick="setFilter(this,'block')">Dangerous</button>
+        <button class="filter-btn" onclick="setFilter(this,'warn')">Suspicious</button>
+        <button class="filter-btn" onclick="setFilter(this,'allow')">Safe</button>
       </div>
       <table class="scan-table">
-        <thead><tr><th>Subject</th><th>Sender</th><th>Type</th><th>Risk</th><th>Time</th></tr></thead>
-        <tbody id="tableBody"></tbody>
+        <thead>
+          <tr>
+            <th>Target</th>
+            <th>Type</th>
+            <th>Score</th>
+            <th>Verdict</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Loading scan history...</td></tr>
+        </tbody>
       </table>
     </div>
+
     <div class="card">
       <div class="card-title">Live Activity</div>
-      <div class="activity-list">
-        <div class="activity-item"><div class="act-icon high">🚨</div><div><div class="act-text">High-risk phishing blocked from <b>noreply@secure-verify.xyz</b></div><div class="act-time">2 min ago</div></div></div>
-        <div class="activity-item"><div class="act-icon med">⚠️</div><div><div class="act-text">Suspicious link from <b>billing@paypa1.com</b></div><div class="act-time">8 min ago</div></div></div>
-        <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Email from <b>support@github.com</b> passed all checks</div><div class="act-time">15 min ago</div></div></div>
-        <div class="activity-item"><div class="act-icon high">🚨</div><div><div class="act-text">Malicious attachment (.exe) blocked in PDF disguise</div><div class="act-time">22 min ago</div></div></div>
-        <div class="activity-item"><div class="act-icon low">✅</div><div><div class="act-text">Newsletter from <b>newsletter@medium.com</b> cleared</div><div class="act-time">41 min ago</div></div></div>
-        <div class="activity-item"><div class="act-icon med">⚠️</div><div><div class="act-text">Spoofed sender detected — impersonating PayPal</div><div class="act-time">1 hr ago</div></div></div>
+      <div class="activity-list" id="activityList">
+        <div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:2rem;">Loading...</div>
       </div>
     </div>
   </div>
+
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -121,6 +188,11 @@ function toggleSidebar() {
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('active');
+}
+function scrollToScan(e) {
+  if (e) e.preventDefault();
+  document.getElementById('scanSection').scrollIntoView({ behavior: 'smooth' });
+  if (window.innerWidth <= 768) closeSidebar();
 }
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.nav-item').forEach(function(item) {

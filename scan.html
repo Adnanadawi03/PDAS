@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Scan</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/scan.css">
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">PDAS<span>.</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="scan.html" class="nav-item active"><span class="nav-icon">🔍</span> Scan</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📧</span> Email Scans</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📎</span> File Scans</a>
+    <a href="#" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+    <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Website</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">?</div>
+      <div>
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role" id="userEmail"></div>
+      </div>
+    </div>
+    <button onclick="doLogout()" class="signout-btn">Sign Out</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div>
+        <h1 class="page-title">Phishing Scanner</h1>
+        <div class="page-sub">Scan URLs and files for phishing threats</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    </div>
+  </div>
+
+  <!-- API STATUS -->
+  <div id="apiStatus" class="api-status checking">
+    <span class="api-dot"></span>
+    <span id="apiStatusText">Checking connection to PDAS engine...</span>
+  </div>
+
+  <!-- SCAN TABS -->
+  <div class="scan-tabs">
+    <button class="scan-tab active" id="tabUrl" onclick="switchScanTab('url')">🔗 Scan URL</button>
+    <button class="scan-tab" id="tabFile" onclick="switchScanTab('file')">📎 Scan File</button>
+    <button class="scan-tab" id="tabHistory" onclick="switchScanTab('history')">📋 Scan History</button>
+  </div>
+
+  <!-- URL SCAN -->
+  <div id="urlPanel" class="scan-panel">
+    <div class="scan-card">
+      <h3 class="scan-card-title">Enter URL to Scan</h3>
+      <p class="scan-card-sub">Paste any URL to check if it's a phishing or malicious link</p>
+      <div class="url-input-wrap">
+        <span class="url-icon">🔗</span>
+        <input type="text" id="urlInput" placeholder="https://example.com/suspicious-link" class="url-input" onkeydown="if(event.key==='Enter') scanURL()">
+        <button class="scan-go-btn" onclick="scanURL()" id="urlScanBtn">Scan →</button>
+      </div>
+      <div class="url-examples">
+        <span style="color:var(--muted);font-size:0.8rem;">Try examples:</span>
+        <button class="example-btn" onclick="setUrl('http://paypa1.com/verify-account')">Suspicious URL</button>
+        <button class="example-btn" onclick="setUrl('https://google.com')">Safe URL</button>
+      </div>
+    </div>
+    <div id="urlResult" style="display:none;"></div>
+  </div>
+
+  <!-- FILE SCAN -->
+  <div id="filePanel" class="scan-panel" style="display:none;">
+    <div class="scan-card">
+      <h3 class="scan-card-title">Upload File to Scan</h3>
+      <p class="scan-card-sub">Upload any file to check for malware, malicious macros, or phishing content</p>
+      <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <div class="drop-icon">📁</div>
+        <div class="drop-text">Drop file here or <span style="color:var(--accent);">click to browse</span></div>
+        <div class="drop-sub">PDF, EXE, DOCX, XLSX, ZIP and more — max 10MB</div>
+        <input type="file" id="fileInput" style="display:none;" onchange="scanFile(this.files[0])">
+      </div>
+      <div id="fileSelected" style="display:none;" class="file-selected-info">
+        <span class="file-icon">📄</span>
+        <span id="fileSelectedName"></span>
+        <span id="fileSelectedSize" style="color:var(--muted);font-size:0.8rem;"></span>
+      </div>
+    </div>
+    <div id="fileResult" style="display:none;"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="historyPanel" class="scan-panel" style="display:none;">
+    <div class="scan-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <h3 class="scan-card-title" style="margin:0;">Recent Scans</h3>
+        <button class="settings-btn" style="width:auto;padding:0.5rem 1rem;font-size:0.82rem;" onclick="loadHistory()">↻ Refresh</button>
+      </div>
+      <div id="historyList"><div style="color:var(--muted);text-align:center;padding:2rem;">Loading...</div></div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/theme.js"></script>
+<script src="js/scan.js"></script>
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+</script>
+</body>
+</html>

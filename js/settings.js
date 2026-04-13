@@ -18,6 +18,9 @@ async function initSettings() {
   document.getElementById('inputName').value = name;
   document.getElementById('inputEmail').value = user.email;
 
+  // Load company info
+  await loadCompanyInfo(session.user.id);
+
   // Load avatar if exists
   const avatarUrl = user.user_metadata?.avatar_url;
   if (avatarUrl) {
@@ -345,4 +348,79 @@ async function uploadAvatar(input) {
   document.getElementById('avatarMsg').textContent = '✓ Photo updated!';
   document.getElementById('avatarMsg').style.color = '#22c55e';
   setTimeout(() => { document.getElementById('avatarMsg').textContent = ''; }, 3000);
+}
+
+// ── Company Info ──
+async function loadCompanyInfo(userId) {
+  const companySection = document.getElementById('companySection');
+  if (!companySection) return;
+
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('company_id, status, role, companies(id, name, code)')
+    .eq('id', userId)
+    .single();
+
+  if (!profile) return;
+
+  const companyNameEl = document.getElementById('companyName');
+  const companyCodeEl = document.getElementById('companyCode');
+  const companyStatusEl = document.getElementById('companyStatus');
+  const noCompanySection = document.getElementById('noCompanySection');
+  const hasCompanySection = document.getElementById('hasCompanySection');
+
+  if (profile.company_id && profile.companies) {
+    // User is in a company
+    if (noCompanySection) noCompanySection.style.display = 'none';
+    if (hasCompanySection) hasCompanySection.style.display = 'block';
+    if (companyNameEl) companyNameEl.textContent = profile.companies.name;
+    if (companyCodeEl) companyCodeEl.textContent = profile.companies.code;
+    if (companyStatusEl) {
+      const statusColors = { active: '#22c55e', pending: '#f59e0b', rejected: '#ef4444' };
+      const statusLabels = { active: '✅ Active Member', pending: '⏳ Pending Approval', rejected: '❌ Request Rejected' };
+      companyStatusEl.textContent = statusLabels[profile.status] || profile.status;
+      companyStatusEl.style.color = statusColors[profile.status] || 'var(--muted)';
+    }
+  } else {
+    // User has no company
+    if (noCompanySection) noCompanySection.style.display = 'block';
+    if (hasCompanySection) hasCompanySection.style.display = 'none';
+  }
+}
+
+async function joinCompany() {
+  const code = (document.getElementById('joinCodeInput')?.value || '').trim().toUpperCase();
+  const errEl = document.getElementById('joinError');
+  const sucEl = document.getElementById('joinSuccess');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  if (!code) { errEl.textContent = 'Please enter a company code.'; errEl.style.display = 'block'; return; }
+
+  const { data: company, error } = await _supabase
+    .from('companies')
+    .select('id, name')
+    .eq('code', code)
+    .single();
+
+  if (error || !company) { errEl.textContent = 'Invalid company code. Please check with your admin.'; errEl.style.display = 'block'; return; }
+
+  const { data: { session } } = await _supabase.auth.getSession();
+  const { error: updateErr } = await _supabase
+    .from('profiles')
+    .update({ company_id: company.id, status: 'pending' })
+    .eq('id', session.user.id);
+
+  if (updateErr) { errEl.textContent = updateErr.message; errEl.style.display = 'block'; return; }
+
+  sucEl.textContent = '✓ Request sent to ' + company.name + '! Waiting for admin approval.';
+  sucEl.style.display = 'block';
+  setTimeout(() => loadCompanyInfo(session.user.id), 1500);
+}
+
+async function leaveCompany() {
+  if (!confirm('Are you sure you want to leave this company?')) return;
+  const { data: { session } } = await _supabase.auth.getSession();
+  await _supabase.from('profiles').update({ company_id: null, status: 'active' }).eq('id', session.user.id);
+  showMsg('profileMsg', '✓ You have left the company.', 'success');
+  loadCompanyInfo(session.user.id);
 }

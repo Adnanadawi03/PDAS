@@ -3,8 +3,10 @@ const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Redirect if already logged in
-_supabase.auth.getSession().then(({ data }) => {
-  if (data.session) window.location.href = 'dashboard.html';
+_supabase.auth.getSession().then(async ({ data }) => {
+  if (data.session) {
+    await redirectByRole(data.session.user.id);
+  }
 });
 
 // Show message if redirected from dashboard
@@ -14,7 +16,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const banner = document.getElementById('authBanner');
     if (banner) { banner.textContent = '🔒 Please sign in or create an account to access the dashboard.'; banner.style.display = 'block'; }
   }
+  if (params.get('msg') === 'admin') {
+    const banner = document.getElementById('authBanner');
+    if (banner) { banner.textContent = '🔒 Admin access only. Please sign in with your admin account.'; banner.style.display = 'block'; }
+  }
 });
+
+// ── Role-based redirect ──
+async function redirectByRole(userId) {
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+  if (profile?.role === 'admin') {
+    window.location.href = 'admin-dashboard.html';
+  } else {
+    window.location.href = 'dashboard.html';
+  }
+}
 
 // ── Form switchers ──
 function showLogin() {
@@ -35,7 +55,7 @@ function showSignup() {
 }
 function switchTab(tab) { tab === 'login' ? showLogin() : showSignup(); }
 
-// ── Password strength + requirements ──
+// ── Password requirements ──
 function checkStrength(pw) {
   const reqs = {
     'req-length':  pw.length >= 8,
@@ -47,8 +67,6 @@ function checkStrength(pw) {
   const segs = ['s1','s2','s3','s4'].map(id => document.getElementById(id));
   const colors = ['#ef4444','#f59e0b','#22c55e','#00e5ff'];
   segs.forEach((s,i) => { if(s) s.style.background = i < score ? colors[score-1] : 'rgba(255,255,255,0.07)'; });
-
-  // Show requirements checklist
   const reqBox = document.getElementById('pwReqs');
   if (reqBox) reqBox.classList.toggle('show', pw.length > 0);
   Object.entries(reqs).forEach(([id, met]) => {
@@ -60,8 +78,6 @@ function checkStrength(pw) {
 // ── Login ──
 let _mfaChallengeId = null;
 let _mfaFactorId = null;
-
-function showLoginForm() { showLogin(); }
 
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
@@ -80,7 +96,7 @@ async function handleLogin() {
     return;
   }
 
-  // Check if 2FA required
+  // Check 2FA
   const { data: mfaData } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (mfaData?.nextLevel === 'aal2' && mfaData.nextLevel !== mfaData.currentLevel) {
     const { data: factors } = await _supabase.auth.mfa.listFactors();
@@ -96,13 +112,8 @@ async function handleLogin() {
       return;
     }
   }
-  // Check if admin → redirect to admin dashboard
-  const { data: profile } = await _supabase.from('profiles').select('role').eq('id', data.user.id).single();
-  if (profile?.role === 'admin') {
-    window.location.href = 'admin-dashboard.html';
-  } else {
-    window.location.href = 'dashboard.html';
-  }
+
+  await redirectByRole(data.user.id);
 }
 
 async function handleMFAChallenge() {
@@ -112,12 +123,11 @@ async function handleMFAChallenge() {
   errEl.style.display = 'none';
   if (!code || code.length < 6) { errEl.textContent = 'Please enter the 6-digit code.'; errEl.style.display = 'block'; return; }
   btn.textContent = 'Verifying...'; btn.disabled = true;
-  const { error } = await _supabase.auth.mfa.verify({ factorId: _mfaFactorId, challengeId: _mfaChallengeId, code });
+  const { data, error } = await _supabase.auth.mfa.verify({ factorId: _mfaFactorId, challengeId: _mfaChallengeId, code });
   if (error) { errEl.textContent = 'Invalid code. Please try again.'; errEl.style.display = 'block'; btn.textContent = 'Verify →'; btn.disabled = false; }
-  else { window.location.href = 'dashboard.html'; }
+  else { await redirectByRole((await _supabase.auth.getUser()).data.user.id); }
 }
 
-// ── Forgot password ──
 async function forgotPassword() {
   const email = document.getElementById('loginEmail').value.trim();
   const errEl = document.getElementById('loginError');
@@ -125,7 +135,6 @@ async function forgotPassword() {
   const { error } = await _supabase.auth.resetPasswordForEmail(email);
   errEl.style.color = error ? '#ef4444' : '#22c55e';
   errEl.style.background = error ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)';
-  errEl.style.borderColor = error ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)';
   errEl.textContent = error ? error.message : '✓ Reset code sent to your email!';
   errEl.style.display = 'block';
 }
@@ -138,16 +147,25 @@ async function handleSignup() {
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPw').value;
   const confirm = document.getElementById('signupConfirm').value;
+  const companyCode = (document.getElementById('signupCode')?.value || '').trim().toUpperCase();
   const errEl = document.getElementById('signupError');
   const btn = document.getElementById('signupBtn');
   errEl.style.display = 'none';
   if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
   if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
   if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  btn.textContent = 'Creating account...'; btn.disabled = true;
-  const companyCode = (document.getElementById('signupCode')?.value || '').trim().toUpperCase();
 
-  const { error } = await _supabase.auth.signUp({ email, password, options: { data: { full_name: name, company_code: companyCode } } });
+  // Validate company code if entered
+  if (companyCode) {
+    const { data: company, error: cErr } = await _supabase.from('companies').select('id,name').eq('code', companyCode).single();
+    if (cErr || !company) { errEl.textContent = '⚠️ Invalid company code. Please check with your admin.'; errEl.style.display = 'block'; return; }
+  }
+
+  btn.textContent = 'Creating account...'; btn.disabled = true;
+  const { error } = await _supabase.auth.signUp({
+    email, password,
+    options: { data: { full_name: name, company_code: companyCode } }
+  });
   if (error) {
     errEl.textContent = error.message; errEl.style.display = 'block';
     btn.textContent = 'Create Account →'; btn.disabled = false;
@@ -168,13 +186,32 @@ async function handleVerify() {
   errEl.style.display = 'none'; sucEl.style.display = 'none';
   if (!code || code.length < 6) { errEl.textContent = 'Please enter the 6-digit code.'; errEl.style.display = 'block'; return; }
   btn.textContent = 'Verifying...'; btn.disabled = true;
-  const { error } = await _supabase.auth.verifyOtp({ email: _pendingEmail, token: code, type: 'signup' });
+
+  const { data, error } = await _supabase.auth.verifyOtp({ email: _pendingEmail, token: code, type: 'signup' });
   if (error) {
     errEl.textContent = 'Invalid or expired code. Please try again.'; errEl.style.display = 'block';
     btn.textContent = 'Confirm Account →'; btn.disabled = false;
   } else {
+    // After verification, apply company code if provided
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session) {
+      const companyCode = session.user.user_metadata?.company_code;
+      if (companyCode) {
+        const { data: company } = await _supabase.from('companies').select('id').eq('code', companyCode).single();
+        if (company) {
+          // Set status to 'pending' — needs admin approval
+          await _supabase.from('profiles').update({
+            company_id: company.id,
+            status: 'pending'
+          }).eq('id', session.user.id);
+        }
+      }
+    }
     sucEl.textContent = '✓ Account confirmed! Redirecting...'; sucEl.style.display = 'block';
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+    setTimeout(async () => {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (session) await redirectByRole(session.user.id);
+    }, 1500);
   }
 }
 

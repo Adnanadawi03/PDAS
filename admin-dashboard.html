@@ -17,7 +17,7 @@
   <div class="sidebar-logo">PDAS<span style="color:var(--accent2);">admin</span></div>
   <nav class="sidebar-nav">
     <a href="admin-dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Overview</a>
-    <a href="#" class="nav-item" onclick="showSection('employees',event)"><span class="nav-icon">👥</span> Employees</a>
+    <a href="#" class="nav-item" onclick="showSection('employees',event)"><span class="nav-icon">👥</span> Employees <span id="pendingBadge" style="display:none;background:#f59e0b;color:#000;font-size:0.65rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:100px;margin-left:0.3rem;">0</span></a>
     <a href="#" class="nav-item" onclick="showSection('scans',event)"><span class="nav-icon">🔍</span> All Scans</a>
     <a href="#" class="nav-item" onclick="showSection('alerts',event)"><span class="nav-icon">🚨</span> Alerts</a>
     <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
@@ -63,6 +63,9 @@
       <div class="stat-card warn"><div class="stat-label">Threats Detected</div><div class="stat-num warn" id="statThreats">—</div></div>
       <div class="stat-card danger"><div class="stat-label">Blocked</div><div class="stat-num danger" id="statBlocked">—</div></div>
     </div>
+
+    <!-- PENDING REQUESTS -->
+    <div id="pendingSection" style="display:none;"></div>
 
     <!-- EMPLOYEE RISK TABLE -->
     <div class="grid-2" style="margin-bottom:1.5rem;">

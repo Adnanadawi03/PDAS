@@ -5,7 +5,7 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ⚠️ Change this to your Render.com URL after deployment
 // Local:   'http://127.0.0.1:8000'
 // Render:  'https://pdas-engine.onrender.com'
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = 'https://pdas-engine.onrender.com';
 
 let _allEvents = [];
 let _activeFilter = 'all';

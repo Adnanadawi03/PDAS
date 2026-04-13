@@ -5,7 +5,7 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ⚠️ Change this to your Render.com URL after deployment
 // Local:   'http://127.0.0.1:8000'
 // Render:  'https://pdas-engine.onrender.com'
-const API_BASE = 'https://pdas-engine.onrender.com';
+const API_BASE = 'http://127.0.0.1:8000';
 
 let _allEvents = [];
 let _activeFilter = 'all';
@@ -14,6 +14,24 @@ let _activeFilter = 'all';
 async function initDashboard() {
   const { data: { session } } = await _supabase.auth.getSession();
   if (!session) { window.location.href = 'login.html?msg=signin'; return; }
+
+  // Block admins from user dashboard
+  const { data: profile } = await _supabase.from('profiles').select('role,company_id,status,companies(name,code)').eq('id', session.user.id).single();
+  if (profile?.role === 'admin') {
+    window.location.href = 'admin-dashboard.html';
+    return;
+  }
+
+  // Show pending approval message
+  if (profile?.status === 'pending') {
+    document.getElementById('apiStatus').className = 'api-status offline';
+    document.getElementById('apiStatusText').textContent = '⏳ Your request to join ' + (profile.companies?.name || 'the company') + ' is pending admin approval.';
+  }
+
+  // Show company info in topbar
+  if (profile?.companies?.name) {
+    document.getElementById('lastUpdated').textContent = '🏢 ' + profile.companies.name;
+  }
 
   const user = session.user;
   const name = user.user_metadata?.full_name || user.email.split('@')[0];
@@ -209,7 +227,7 @@ function renderActivity(events) {
     const ago = timeAgo(new Date(e.timestamp));
     return `<div class="activity-item">
       <div class="act-icon ${classes[e.verdict]}">${icons[e.verdict]}</div>
-      <div><div class="act-text">${msgs[e.verdict] ? msgs[e.verdict](e) : e.target}</div><div class="act-time">${ago}</div></div>
+      <div><div class="act-text">${msgs[e.verdict](e)}</div><div class="act-time">${ago}</div></div>
     </div>`;
   }).join('');
 }

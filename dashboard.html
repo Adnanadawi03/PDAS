@@ -44,7 +44,10 @@
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <div>
         <h1 class="page-title">Security Dashboard</h1>
-        <div class="page-sub" id="lastUpdated">Loading...</div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <div class="page-sub" id="lastUpdated">Loading...</div>
+          <span id="companyBadge" style="font-size:0.78rem;padding:0.2rem 0.7rem;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:100px;color:var(--accent);">🏢 Loading...</span>
+        </div>
       </div>
     </div>
     <div class="topbar-right">

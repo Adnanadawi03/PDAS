@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ── Role-based redirect ──
 async function redirectByRole(userId) {
+  // Check if super admin first
+  const { data: { user } } = await _supabase.auth.getUser();
+  if (user?.email?.toLowerCase() === 'adnanadawi123@gmail.com') {
+    window.location.href = 'superadmin.html';
+    return;
+  }
   const { data: profile } = await _supabase
     .from('profiles')
     .select('role')

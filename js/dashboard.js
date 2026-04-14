@@ -22,15 +22,27 @@ async function initDashboard() {
     return;
   }
 
+  // Always show company name in topbar
+  const companyBadge = document.getElementById('companyBadge');
+  if (companyBadge) {
+    if (profile?.companies?.name) {
+      const statusIcon = profile?.status === 'pending' ? '⏳' : '🏢';
+      companyBadge.textContent = statusIcon + ' ' + profile.companies.name;
+      companyBadge.style.color = profile?.status === 'pending' ? '#f59e0b' : 'var(--accent)';
+      companyBadge.style.borderColor = profile?.status === 'pending' ? 'rgba(245,158,11,0.3)' : 'rgba(0,229,255,0.2)';
+      companyBadge.style.background = profile?.status === 'pending' ? 'rgba(245,158,11,0.08)' : 'rgba(0,229,255,0.08)';
+    } else {
+      companyBadge.textContent = '🏢 No company';
+      companyBadge.style.color = 'var(--muted)';
+      companyBadge.style.borderColor = 'var(--border)';
+      companyBadge.style.background = 'transparent';
+    }
+  }
+
   // Show pending approval message
   if (profile?.status === 'pending') {
     document.getElementById('apiStatus').className = 'api-status offline';
     document.getElementById('apiStatusText').textContent = '⏳ Your request to join ' + (profile.companies?.name || 'the company') + ' is pending admin approval.';
-  }
-
-  // Show company info in topbar
-  if (profile?.companies?.name) {
-    document.getElementById('lastUpdated').textContent = '🏢 ' + profile.companies.name;
   }
 
   const user = session.user;

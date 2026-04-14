@@ -218,7 +218,7 @@
               <div style="font-size:0.88rem;font-weight:600;" id="companyStatus">—</div>
             </div>
           </div>
-          <button class="settings-btn-outline" style="width:auto;padding:0.5rem 1.2rem;color:#ef4444;border-color:rgba(239,68,68,0.3);" onclick="leaveCompany()">Leave Company</button>
+
         </div>
 
         <!-- NO COMPANY -->
@@ -253,13 +253,14 @@
           </div>
           <button class="settings-btn-danger" onclick="signOutAll()">Sign Out All</button>
         </div>
-        <div class="danger-item" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
+        <div class="danger-item" id="deleteAccountRow" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
           <div>
             <div class="pref-label">Delete Account</div>
             <div class="pref-sub">Permanently remove your account and data</div>
           </div>
           <button class="settings-btn-danger" onclick="confirmDelete()">Delete</button>
         </div>
+
       </div>
     </div>
 

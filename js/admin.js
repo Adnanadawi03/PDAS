@@ -18,6 +18,16 @@ async function initAdmin() {
     .single();
 
   if (!profile || profile.role !== 'admin') {
+    // If profile is simply missing/null (race condition), wait and retry once
+    if (!profile) {
+      await new Promise(r => setTimeout(r, 1000));
+      const { data: retry } = await _supabase.from('profiles').select('role, company_id, companies(*)').eq('id', session.user.id).single();
+      if (retry?.role === 'admin') {
+        // Profile now exists — reload to re-run initAdmin cleanly
+        window.location.reload();
+        return;
+      }
+    }
     alert('Access denied. Admins only.');
     window.location.href = 'dashboard.html';
     return;

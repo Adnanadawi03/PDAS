@@ -374,13 +374,26 @@ async function loadCompanyInfo(userId) {
     if (noCompanySection) noCompanySection.style.display = 'none';
     if (hasCompanySection) hasCompanySection.style.display = 'block';
     if (companyNameEl) companyNameEl.textContent = profile.companies.name;
-    if (companyCodeEl) companyCodeEl.textContent = profile.companies.code;
+    // 2-4: Only show code if company is approved (status='active') AND user is active member
+    const companyApproved = profile.companies.status === 'active' || !profile.companies.status;
+    if (companyCodeEl) {
+      if (companyApproved && profile.status === 'active') {
+        companyCodeEl.textContent = profile.companies.code;
+      } else if (!companyApproved) {
+        companyCodeEl.textContent = '🔒 Pending PDAS Approval';
+        companyCodeEl.style.color = 'var(--med)';
+        companyCodeEl.style.fontSize = '0.82rem';
+      } else {
+        companyCodeEl.textContent = '••••••••';
+      }
+    }
     if (companyStatusEl) {
       const statusColors = { active: '#22c55e', pending: '#f59e0b', rejected: '#ef4444' };
       const statusLabels = { active: '✅ Active Member', pending: '⏳ Pending Approval', rejected: '❌ Request Rejected' };
       companyStatusEl.textContent = statusLabels[profile.status] || profile.status;
       companyStatusEl.style.color = statusColors[profile.status] || 'var(--muted)';
     }
+
   } else {
     // User has no company
     if (noCompanySection) noCompanySection.style.display = 'block';
@@ -423,4 +436,38 @@ async function leaveCompany() {
   await _supabase.from('profiles').update({ company_id: null, status: 'active' }).eq('id', session.user.id);
   showMsg('profileMsg', '✓ You have left the company.', 'success');
   loadCompanyInfo(session.user.id);
+}
+
+// ── Request Company Deletion (requires super admin approval) ──
+async function requestDeleteCompany() {
+  const SUPER_ADMIN = 'adnanadawi123@gmail.com';
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('role, companies(id, name)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    showMsg('profileMsg', 'Only company admins can request deletion.', 'error');
+    return;
+  }
+
+  if (!confirm('Request deletion of company "' + profile.companies?.name + '"?\n\nThis will be sent to the PDAS super admin for approval.\nThe company will remain active until approved.')) return;
+
+  // Mark company as deletion_requested
+  const { error } = await _supabase
+    .from('companies')
+    .update({ status: 'deletion_requested' })
+    .eq('id', profile.companies.id);
+
+  if (error) {
+    showMsg('profileMsg', 'Error: ' + error.message, 'error');
+  } else {
+    showMsg('profileMsg', '✓ Deletion request sent to PDAS admin (' + SUPER_ADMIN + '). You will be notified once processed.', 'success');
+    const btn = document.getElementById('deleteCompanyRow')?.querySelector('button');
+    if (btn) { btn.textContent = 'Request Sent ✓'; btn.disabled = true; }
+  }
 }

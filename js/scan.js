@@ -3,6 +3,9 @@ const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ⚠️ Change this to your FastAPI server URL when deployed
+// ⚠️ Change this to your Render.com URL after deployment
+// Local:   'http://127.0.0.1:8000'
+// Render:  'https://pdas-engine.onrender.com'
 const API_BASE = 'https://pdas-engine.onrender.com';
 
 // ── Auth guard ──

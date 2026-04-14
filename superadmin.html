@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Super Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0c10; --bg2:#0f1218; --card:#161b24;
+  --accent:#00e5ff; --accent2:#ff4d6d; --accent3:#a259ff;
+  --text:#e8eaf0; --muted:#7a8499; --border:rgba(255,255,255,0.07);
+  --low:#22c55e; --med:#f59e0b; --high:#ef4444;
+  --sidebar:220px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; display:flex; min-height:100vh; }
+h1,h2,h3 { font-family:'Syne',sans-serif; }
+body.light { --bg:#f4f6fa; --bg2:#eaecf2; --card:#ffffff; --text:#0f1218; --muted:#6b7280; --border:rgba(0,0,0,0.09); background:#f4f6fa; }
+
+/* SIDEBAR */
+.sidebar { width:var(--sidebar); background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:1.5rem 0; position:fixed; top:0; bottom:0; left:0; z-index:50; }
+.sidebar-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; color:var(--accent2); padding:0 1.5rem 2rem; }
+.sidebar-logo small { display:block; font-size:0.65rem; color:var(--muted); font-weight:400; font-family:'DM Sans',sans-serif; margin-top:-0.3rem; letter-spacing:0.05em; }
+.nav-item { display:flex; align-items:center; gap:0.7rem; padding:0.75rem 1.5rem; color:var(--muted); text-decoration:none; font-size:0.88rem; font-weight:500; transition:all 0.15s; border-left:3px solid transparent; cursor:pointer; border:none; background:transparent; width:100%; text-align:left; }
+.nav-item:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+.nav-item.active { color:var(--accent2); border-color:var(--accent2); background:rgba(255,77,109,0.05); }
+.sidebar-footer { padding:1.5rem; border-top:1px solid var(--border); margin-top:auto; }
+.user-info { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem; }
+.avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent2),var(--accent3)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:0.85rem; color:#fff; flex-shrink:0; }
+.signout-btn { width:100%; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; padding:0.5rem; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.82rem; transition:all 0.2s; }
+.signout-btn:hover { background:rgba(239,68,68,0.2); }
+
+/* MAIN */
+.main { margin-left:var(--sidebar); flex:1; padding:2rem 2.5rem; position:relative; z-index:1; }
+.topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+.page-title { font-size:1.5rem; font-weight:800; }
+.page-sub { color:var(--muted); font-size:0.85rem; }
+
+/* STATS */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.4rem; position:relative; overflow:hidden; }
+.stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.stat-card.total::after { background:var(--accent); }
+.stat-card.warn::after { background:var(--med); }
+.stat-card.danger::after { background:var(--high); }
+.stat-card.safe::after { background:var(--low); }
+.stat-label { font-size:0.75rem; color:var(--muted); font-weight:500; letter-spacing:0.05em; margin-bottom:0.5rem; text-transform:uppercase; }
+.stat-num { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; line-height:1; }
+.stat-num.total { color:var(--accent); }
+.stat-num.warn { color:var(--med); }
+.stat-num.danger { color:var(--high); }
+.stat-num.safe { color:var(--low); }
+
+/* CARDS */
+.card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.4rem; margin-bottom:1.5rem; }
+.card-title { font-size:0.95rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; }
+.card-title span { color:var(--muted); font-size:0.78rem; font-weight:400; }
+
+/* COMPANY CARDS */
+.company-item { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem; background:var(--bg2); border-radius:10px; margin-bottom:0.75rem; flex-wrap:wrap; border:1px solid var(--border); }
+.company-item.pending { border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.04); }
+.company-item.deletion { border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.04); }
+.company-item:last-child { margin-bottom:0; }
+.company-name { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; margin-bottom:0.2rem; }
+.company-meta { font-size:0.78rem; color:var(--muted); }
+.code-reveal { font-family:monospace; color:var(--accent); background:var(--bg); padding:0.15rem 0.5rem; border-radius:5px; font-size:0.85rem; letter-spacing:0.1em; }
+.action-btns { display:flex; gap:0.5rem; flex-wrap:wrap; }
+.btn-approve { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:#22c55e; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600; transition:all 0.2s; }
+.btn-approve:hover { background:rgba(34,197,94,0.25); }
+.btn-reject { background:transparent; border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.8rem; transition:all 0.2s; }
+.btn-reject:hover { background:rgba(239,68,68,0.1); }
+.btn-delete { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600; transition:all 0.2s; }
+.btn-delete:hover { background:rgba(239,68,68,0.25); }
+.btn-restore { background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.2); color:var(--accent); padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.8rem; transition:all 0.2s; }
+
+/* BADGE */
+.badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 4px; border-radius:100px; font-size:0.65rem; font-weight:700; margin-left:0.4rem; }
+.badge-warn { background:#f59e0b; color:#000; }
+.badge-danger { background:#ef4444; color:#fff; }
+
+/* STATUS */
+.status-pill { padding:0.15rem 0.6rem; border-radius:100px; font-size:0.72rem; font-weight:700; }
+.s-active { background:rgba(34,197,94,0.12); color:#22c55e; }
+.s-pending { background:rgba(245,158,11,0.12); color:#f59e0b; }
+.s-rejected { background:rgba(239,68,68,0.12); color:#ef4444; }
+.s-deletion { background:rgba(239,68,68,0.12); color:#ef4444; }
+
+/* TABLE */
+.scan-table { width:100%; border-collapse:collapse; }
+.scan-table th { font-size:0.75rem; color:var(--muted); font-weight:500; text-align:left; padding:0.5rem 0.75rem; border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:0.06em; }
+.scan-table td { padding:0.7rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.83rem; vertical-align:middle; }
+.scan-table tr:last-child td { border-bottom:none; }
+.scan-table tr:hover td { background:rgba(255,255,255,0.02); }
+
+/* THEME TOGGLE */
+.theme-toggle { background:var(--card); border:1px solid var(--border); color:var(--text); width:38px; height:38px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; transition:all 0.3s; }
+
+/* MENU TOGGLE */
+.menu-toggle { display:none; background:var(--card); border:1px solid var(--border); color:var(--text); width:38px; height:38px; border-radius:8px; cursor:pointer; align-items:center; justify-content:center; font-size:1.1rem; }
+.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
+.sidebar-overlay.active { display:block; }
+
+@media(max-width:768px) {
+  .menu-toggle { display:flex; }
+  .sidebar { transform:translateX(-100%); transition:transform 0.3s; box-shadow:4px 0 20px rgba(0,0,0,0.3); }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; padding:1.5rem 1rem; }
+}
+
+.empty-state { color:var(--muted); text-align:center; padding:2rem; font-size:0.85rem; }
+.success-state { color:#22c55e; text-align:center; padding:1.5rem; font-size:0.85rem; }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">PDAS <small>SUPER ADMIN</small></div>
+  <nav style="flex:1;">
+    <button class="nav-item active" id="navCompanies" onclick="showTab('companies')">🏢 Companies <span class="badge badge-warn" id="pendingBadge" style="display:none;"></span></button>
+    <button class="nav-item" id="navDeletion" onclick="showTab('deletion')">🗑️ Delete Requests <span class="badge badge-danger" id="deletionBadge" style="display:none;"></span></button>
+    <button class="nav-item" id="navUsers" onclick="showTab('users')">👥 All Users</button>
+    <a href="dashboard.html" class="nav-item">📊 My Dashboard</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">S</div>
+      <div>
+        <div style="font-size:0.85rem;font-weight:600;" id="userName">Super Admin</div>
+        <div style="font-size:0.7rem;color:var(--accent2);">SUPER ADMIN</div>
+      </div>
+    </div>
+    <button class="signout-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div>
+        <h1 class="page-title">Super Admin Panel</h1>
+        <div class="page-sub">PDAS System Management · adnanadawi123@gmail.com</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      <button onclick="loadData()" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card total"><div class="stat-label">Total Companies</div><div class="stat-num total" id="stTotal">—</div></div>
+    <div class="stat-card warn"><div class="stat-label">Pending Approval</div><div class="stat-num warn" id="stPending">—</div></div>
+    <div class="stat-card danger"><div class="stat-label">Delete Requests</div><div class="stat-num danger" id="stDeletion">—</div></div>
+    <div class="stat-card safe"><div class="stat-label">Total Users</div><div class="stat-num safe" id="stUsers">—</div></div>
+  </div>
+
+  <!-- COMPANIES TAB -->
+  <div id="tab-companies">
+    <div class="card">
+      <div class="card-title">⏳ Pending Approval <span>Approve to reveal join code</span></div>
+      <div id="pendingList"><div class="empty-state">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Active Companies</div>
+      <div id="activeList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- DELETION TAB -->
+  <div id="tab-deletion" style="display:none;">
+    <div class="card">
+      <div class="card-title" style="color:#ef4444;">🗑️ Company Deletion Requests <span>Admin requested — awaiting your approval</span></div>
+      <div id="deletionList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tab-users" style="display:none;">
+    <div class="card">
+      <div class="card-title">👥 All Users <span id="userCount"></span></div>
+      <div style="overflow-x:auto;">
+        <table class="scan-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Company</th><th>Status</th><th>Joined</th></tr></thead>
+          <tbody id="usersList"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/theme.js"></script>
+<script>
+const SUPABASE_URL = 'https://tzujckucxxmbxkpfkngn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1';
+const SUPER_ADMIN_EMAIL = 'adnanadawi123@gmail.com';
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let _companies = [], _users = [], _currentTab = 'companies';
+
+// ── Init ──
+async function initSuperAdmin() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+  if (session.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+    alert('Access denied. Super admin only.');
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  const name = session.user.user_metadata?.full_name || 'Super Admin';
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+  await loadData();
+}
+
+// ── Load data ──
+async function loadData() {
+  const [compRes, userRes] = await Promise.all([
+    _supabase.from('companies').select('*').order('created_at', { ascending: false }),
+    _supabase.from('profiles').select('*,companies(name)').order('created_at', { ascending: false })
+  ]);
+
+  _companies = compRes.data || [];
+  _users = userRes.data || [];
+
+  const pending  = _companies.filter(c => c.status === 'pending').length;
+  const deletion = _companies.filter(c => c.status === 'deletion_requested').length;
+
+  document.getElementById('stTotal').textContent   = _companies.filter(c => c.status === 'active' || !c.status).length;
+  document.getElementById('stPending').textContent  = pending;
+  document.getElementById('stDeletion').textContent = deletion;
+  document.getElementById('stUsers').textContent    = _users.length;
+
+  const pb = document.getElementById('pendingBadge');
+  pb.textContent = pending; pb.style.display = pending > 0 ? 'inline-flex' : 'none';
+  const db = document.getElementById('deletionBadge');
+  db.textContent = deletion; db.style.display = deletion > 0 ? 'inline-flex' : 'none';
+
+  renderAll();
+}
+
+function renderAll() {
+  renderPending();
+  renderActive();
+  renderDeletion();
+  renderUsers();
+}
+
+// ── Pending companies ──
+function renderPending() {
+  const list = _companies.filter(c => c.status === 'pending');
+  const el = document.getElementById('pendingList');
+  if (!list.length) { el.innerHTML = '<div class="success-state">✅ No pending requests</div>'; return; }
+  el.innerHTML = list.map(c => `
+    <div class="company-item pending">
+      <div style="flex:1;min-width:0;">
+        <div class="company-name">🏢 ${esc(c.name)}</div>
+        <div class="company-meta">Admin ID: ${c.admin_id?.slice(0,8)}... · Submitted: ${new Date(c.created_at).toLocaleDateString()}</div>
+        <div class="company-meta" style="margin-top:0.2rem;">Code (hidden from admin): <span style="font-family:monospace;color:var(--med);">${c.code}</span></div>
+      </div>
+      <div class="action-btns">
+        <button class="btn-approve" onclick="approveCompany('${c.id}','${esc(c.name)}')">✓ Approve</button>
+        <button class="btn-reject"  onclick="rejectCompany('${c.id}','${esc(c.name)}')">✗ Reject</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Active companies ──
+function renderActive() {
+  const list = _companies.filter(c => c.status === 'active' || !c.status);
+  const el = document.getElementById('activeList');
+  if (!list.length) { el.innerHTML = '<div class="empty-state">No active companies yet.</div>'; return; }
+  el.innerHTML = list.map(c => `
+    <div class="company-item">
+      <div style="flex:1;min-width:0;">
+        <div class="company-name">${esc(c.name)}</div>
+        <div class="company-meta">Join Code: <span class="code-reveal">${c.code}</span> · Created: ${new Date(c.created_at).toLocaleDateString()}</div>
+      </div>
+      <span class="status-pill s-active">Active</span>
+    </div>`).join('');
+}
+
+// ── Deletion requests ──
+function renderDeletion() {
+  const list = _companies.filter(c => c.status === 'deletion_requested');
+  const el = document.getElementById('deletionList');
+  if (!list.length) { el.innerHTML = '<div class="success-state">✅ No deletion requests</div>'; return; }
+  el.innerHTML = list.map(c => `
+    <div class="company-item deletion">
+      <div style="flex:1;min-width:0;">
+        <div class="company-name">🗑️ ${esc(c.name)}</div>
+        <div class="company-meta">Code: <span class="code-reveal">${c.code}</span> · Admin ID: ${c.admin_id?.slice(0,8)}...</div>
+      </div>
+      <div class="action-btns">
+        <button class="btn-delete"  onclick="deleteCompany('${c.id}','${esc(c.name)}')">🗑️ Delete</button>
+        <button class="btn-restore" onclick="restoreCompany('${c.id}')">↩ Cancel</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Users ──
+function renderUsers() {
+  document.getElementById('userCount').textContent = _users.length + ' total';
+  const roleColors = { admin:'#a259ff', employee:'var(--muted)' };
+  const statusColors = { active:'#22c55e', pending:'#f59e0b', rejected:'#ef4444' };
+  const body = document.getElementById('usersList');
+  if (!_users.length) { body.innerHTML = '<tr><td colspan="6" class="empty-state">No users yet.</td></tr>'; return; }
+  body.innerHTML = _users.map(u => `
+    <tr>
+      <td>${esc(u.full_name||'—')}</td>
+      <td style="color:var(--muted);font-size:0.78rem;">${esc(u.email||'—')}</td>
+      <td><span style="color:${roleColors[u.role]||'var(--muted)'};font-size:0.78rem;font-weight:600;">${(u.role||'employee').toUpperCase()}</span></td>
+      <td style="font-size:0.78rem;color:var(--muted);">${esc(u.companies?.name||'—')}</td>
+      <td><span style="color:${statusColors[u.status]||'var(--muted)'};font-size:0.78rem;">${u.status||'active'}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem;">${new Date(u.created_at).toLocaleDateString()}</td>
+    </tr>`).join('');
+}
+
+// ── Actions ──
+async function approveCompany(id, name) {
+  if (!confirm('Approve "' + name + '"?\n\nThis will reveal their join code to the company admin.')) return;
+  const { error } = await _supabase.from('companies').update({ status: 'active' }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  alert('✅ Company "' + name + '" approved! Their join code is now visible.');
+  await loadData();
+}
+
+async function rejectCompany(id, name) {
+  if (!confirm('Reject "' + name + '"?\nThe company admin will see their request was rejected.')) return;
+  const { error } = await _supabase.from('companies').update({ status: 'rejected' }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  await loadData();
+}
+
+async function deleteCompany(id, name) {
+  if (!confirm('PERMANENTLY DELETE "' + name + '"?\n\nAll employees will be removed. This cannot be undone.')) return;
+  await _supabase.from('profiles').update({ company_id: null, status: 'active' }).eq('company_id', id);
+  const { error } = await _supabase.from('companies').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  alert('Company deleted.');
+  await loadData();
+}
+
+async function restoreCompany(id) {
+  await _supabase.from('companies').update({ status: 'active' }).eq('id', id);
+  await loadData();
+}
+
+// ── Tab switching ──
+function showTab(tab) {
+  _currentTab = tab;
+  ['companies','deletion','users'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  });
+  if (window.innerWidth <= 768) closeSidebar();
+}
+
+// ── Helpers ──
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('pdas-theme', isLight ? 'light' : 'dark');
+}
+(function() {
+  if (localStorage.getItem('pdas-theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const b = document.getElementById('themeBtn');
+      if (b) b.textContent = '☀️';
+    });
+  }
+})();
+async function doLogout() {
+  await _supabase.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+document.addEventListener('DOMContentLoaded', initSuperAdmin);
+</script>
+</body>
+</html>

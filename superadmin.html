@@ -188,7 +188,7 @@ body.light { --bg:#f4f6fa; --bg2:#eaecf2; --card:#ffffff; --text:#0f1218; --mute
       <div class="card-title">👥 All Users <span id="userCount"></span></div>
       <div style="overflow-x:auto;">
         <table class="scan-table">
-          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Company</th><th>Status</th><th>Joined</th></tr></thead>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Company</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
           <tbody id="usersList"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
         </table>
       </div>
@@ -297,7 +297,10 @@ function renderActive() {
         <div class="company-name">${esc(c.name)}</div>
         <div class="company-meta">Join Code: <span class="code-reveal">${c.code}</span> · Created: ${new Date(c.created_at).toLocaleDateString()}</div>
       </div>
-      <span class="status-pill s-active">Active</span>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="status-pill s-active">Active</span>
+        <button class="btn-delete" onclick="deleteCompanyDirect('${c.id}','${esc(c.name)}')">🗑️ Delete</button>
+      </div>
     </div>`).join('');
 }
 
@@ -334,6 +337,7 @@ function renderUsers() {
       <td style="font-size:0.78rem;color:var(--muted);">${esc(u.companies?.name||'—')}</td>
       <td><span style="color:${statusColors[u.status]||'var(--muted)'};font-size:0.78rem;">${u.status||'active'}</span></td>
       <td style="color:var(--muted);font-size:0.78rem;">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td><button onclick="deleteUser('${u.id}','${esc(u.email||u.id)}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;font-size:0.72rem;">Delete</button></td>
     </tr>`).join('');
 }
 
@@ -402,6 +406,48 @@ function toggleTheme() {
     });
   }
 })();
+// ── Delete User (super admin only) ──
+async function deleteUser(userId, userEmail) {
+  if (!confirm('DELETE user "' + userEmail + '"?\n\nThis will permanently remove their account and all scan data.\nThis CANNOT be undone.')) return;
+  
+  // Remove from company first
+  await _supabase.from('profiles').delete().eq('id', userId);
+  
+  // Note: Full auth user deletion requires service_role key
+  // This removes their profile and data
+  const { error } = await _supabase.from('scan_logs').delete().eq('user_id', userId);
+  
+  if (error) {
+    alert('Error deleting user data: ' + error.message);
+  } else {
+    alert('✓ User profile and scan data deleted.\n\nNote: Auth account deletion requires Supabase dashboard → Authentication → Users → Delete.');
+    await loadData();
+  }
+}
+
+// ── Delete Company directly (super admin only) ──
+async function deleteCompanyDirect(id, name) {
+  if (!confirm('PERMANENTLY DELETE "' + name + '"?\n\n• All employees removed from company\n• All company scan logs deleted\n• This CANNOT be undone\n\nAre you sure?')) return;
+  
+  // Remove employees from company
+  const { error: empErr } = await _supabase.from('profiles')
+    .update({ company_id: null, status: 'active' })
+    .eq('company_id', id);
+  
+  // Delete scan logs
+  await _supabase.from('scan_logs').delete().eq('company_id', id);
+  
+  // Delete company
+  const { error } = await _supabase.from('companies').delete().eq('id', id);
+  
+  if (error) {
+    alert('Error: ' + error.message);
+  } else {
+    alert('Company "' + name + '" deleted successfully.');
+    await loadData();
+  }
+}
+
 async function doLogout() {
   await _supabase.auth.signOut();
   window.location.href = 'login.html';

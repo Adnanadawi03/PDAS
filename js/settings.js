@@ -439,39 +439,7 @@ async function leaveCompany() {
   loadCompanyInfo(session.user.id);
 }
 
-// ── Request Company Deletion (requires super admin approval) ──
-async function requestDeleteCompany() {
-  const SUPER_ADMIN = 'adnanadawi123@gmail.com';
-  const { data: { session } } = await _supabase.auth.getSession();
-  if (!session) return;
 
-  const { data: profile } = await _supabase
-    .from('profiles')
-    .select('role, companies(id, name)')
-    .eq('id', session.user.id)
-    .single();
-
-  if (profile?.role !== 'admin') {
-    showMsg('profileMsg', 'Only company admins can request deletion.', 'error');
-    return;
-  }
-
-  if (!confirm('Request deletion of company "' + profile.companies?.name + '"?\n\nThis will be sent to the PDAS super admin for approval.\nThe company will remain active until approved.')) return;
-
-  // Mark company as deletion_requested
-  const { error } = await _supabase
-    .from('companies')
-    .update({ status: 'deletion_requested' })
-    .eq('id', profile.companies.id);
-
-  if (error) {
-    showMsg('profileMsg', 'Error: ' + error.message, 'error');
-  } else {
-    showMsg('profileMsg', '✓ Deletion request sent to PDAS admin (' + SUPER_ADMIN + '). You will be notified once processed.', 'success');
-    const btn = document.getElementById('deleteCompanyRow')?.querySelector('button');
-    if (btn) { btn.textContent = 'Request Sent ✓'; btn.disabled = true; }
-  }
-}
 
 // ── Show delete company button for admins only ──
 async function checkAdminDeleteButton() {
@@ -532,5 +500,48 @@ async function requestDeleteCompany() {
     showMsg('profileMsg', '✓ Deletion request sent to PDAS admin. Your company stays active until approved.', 'success');
     const btn = document.getElementById('deleteCompanyBtn');
     if (btn) { btn.textContent = '⏳ Request Pending'; btn.disabled = true; }
+  }
+}
+
+// ── Request Company Deletion ──
+async function requestDeleteCompany() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('role, companies(id, name, status)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    showMsg('profileMsg', 'Only company admins can request deletion.', 'error');
+    return;
+  }
+
+  if (profile?.companies?.status === 'deletion_requested') {
+    showMsg('profileMsg', '⏳ Deletion request already pending super admin approval.', 'success');
+    return;
+  }
+
+  const name = profile.companies?.name || 'your company';
+  if (!confirm(
+    'Request deletion of "' + name + '"?\n\n' +
+    '• A request will be sent to the PDAS super admin\n' +
+    '• Your company stays active until approved\n\n' +
+    'Continue?'
+  )) return;
+
+  const { error } = await _supabase
+    .from('companies')
+    .update({ status: 'deletion_requested' })
+    .eq('id', profile.companies.id);
+
+  if (error) {
+    showMsg('profileMsg', 'Error: ' + error.message, 'error');
+  } else {
+    showMsg('profileMsg', '✓ Deletion request sent to super admin. Company stays active until approved.', 'success');
+    const btn = document.getElementById('deleteCompanyBtn');
+    if (btn) { btn.textContent = '⏳ Request Pending'; btn.disabled = true; btn.style.opacity = '0.6'; }
   }
 }

@@ -636,3 +636,14 @@ async function generateReport() {
   }
   btn.textContent = '📄 Download PDF Report'; btn.disabled = false;
 }
+
+// ── Go to file scan ──
+function goToFileScan(e) {
+  if (e) e.preventDefault();
+  // Switch to file tab
+  switchScanTab('file');
+  // Close sidebar on mobile
+  if (window.innerWidth <= 768) {
+    try { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('active'); } catch(err){}
+  }
+}

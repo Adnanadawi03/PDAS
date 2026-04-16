@@ -152,6 +152,8 @@ body.light { --bg:#f4f6fa; --bg2:#eaecf2; --card:#ffffff; --text:#0f1218; --mute
     </div>
   </div>
 
+  <div id="superAlertBar" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:0.75rem 1rem;border-radius:10px;font-size:0.85rem;margin-bottom:1.5rem;cursor:pointer;" onclick="showTab('deletion')"></div>
+
   <!-- STATS -->
   <div class="stats-grid">
     <div class="stat-card total"><div class="stat-label">Total Companies</div><div class="stat-num total" id="stTotal">—</div></div>
@@ -236,6 +238,19 @@ async function loadData() {
   document.getElementById('stPending').textContent  = pending;
   document.getElementById('stDeletion').textContent = deletion;
   document.getElementById('stUsers').textContent    = _users.length;
+
+  const alerts = [];
+  if (pending > 0)  alerts.push(pending  + ' company approval' + (pending>1?' requests':' request') + ' waiting');
+  if (deletion > 0) alerts.push(deletion + ' deletion' + (deletion>1?' requests':' request') + ' waiting');
+  const alertBar = document.getElementById('superAlertBar');
+  if (alertBar) {
+    if (alerts.length) {
+      alertBar.textContent = '⚠️ Action required: ' + alerts.join(' · ');
+      alertBar.style.display = 'block';
+    } else {
+      alertBar.style.display = 'none';
+    }
+  }
 
   const pb = document.getElementById('pendingBadge');
   pb.textContent = pending; pb.style.display = pending > 0 ? 'inline-flex' : 'none';

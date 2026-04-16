@@ -30,6 +30,7 @@ async function initSettings() {
   const darkToggle = document.getElementById('darkModeToggle');
   if (darkToggle) darkToggle.checked = !document.body.classList.contains('light');
   await checkMFAStatus();
+  await checkAdminDeleteButton();
 }
 
 // ── Helpers ──
@@ -469,5 +470,67 @@ async function requestDeleteCompany() {
     showMsg('profileMsg', '✓ Deletion request sent to PDAS admin (' + SUPER_ADMIN + '). You will be notified once processed.', 'success');
     const btn = document.getElementById('deleteCompanyRow')?.querySelector('button');
     if (btn) { btn.textContent = 'Request Sent ✓'; btn.disabled = true; }
+  }
+}
+
+// ── Show delete company button for admins only ──
+async function checkAdminDeleteButton() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('role, companies(id, name, status)')
+    .eq('id', session.user.id)
+    .single();
+
+  const row = document.getElementById('deleteCompanyRow');
+  if (!row) return;
+
+  if (profile?.role === 'admin' && profile?.companies) {
+    row.style.display = 'flex';
+    const btn = document.getElementById('deleteCompanyBtn');
+    if (profile.companies.status === 'deletion_requested') {
+      if (btn) { btn.textContent = '⏳ Request Pending'; btn.disabled = true; }
+    }
+  } else {
+    row.style.display = 'none';
+  }
+}
+
+// ── Request company deletion (sends to super admin) ──
+async function requestDeleteCompany() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('role, companies(id, name)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    showMsg('profileMsg', 'Only company admins can request deletion.', 'error');
+    return;
+  }
+
+  const companyName = profile.companies?.name || 'your company';
+  if (!confirm(
+    'Request deletion of "' + companyName + '"?\n\n' +
+    'This will send a request to the PDAS super admin.\n' +
+    'Your company remains active until they approve.\n\n' +
+    'Are you sure?'
+  )) return;
+
+  const { error } = await _supabase
+    .from('companies')
+    .update({ status: 'deletion_requested' })
+    .eq('id', profile.companies.id);
+
+  if (error) {
+    showMsg('profileMsg', 'Error: ' + error.message, 'error');
+  } else {
+    showMsg('profileMsg', '✓ Deletion request sent to PDAS admin. Your company stays active until approved.', 'success');
+    const btn = document.getElementById('deleteCompanyBtn');
+    if (btn) { btn.textContent = '⏳ Request Pending'; btn.disabled = true; }
   }
 }

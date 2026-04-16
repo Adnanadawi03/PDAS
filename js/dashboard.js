@@ -88,12 +88,30 @@ async function loadAllData() {
   const { data: { session } } = await _supabase.auth.getSession();
   if (!session) return;
 
-  const { data: scans, error } = await _supabase
+  // Get total count first
+  const { count } = await _supabase
     .from('scan_logs')
-    .select('*')
-    .eq('user_id', session.user.id)
-    .order('scanned_at', { ascending: false })
-    .limit(100);
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', session.user.id);
+
+  // Load all scans in batches if needed
+  let allScans = [];
+  const batchSize = 1000;
+  let from = 0;
+  while (true) {
+    const { data: batch, error: bErr } = await _supabase
+      .from('scan_logs')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('scanned_at', { ascending: false })
+      .range(from, from + batchSize - 1);
+    if (bErr || !batch || !batch.length) break;
+    allScans = allScans.concat(batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+  const scans = allScans;
+  const error = null;
 
   if (error) {
     console.warn('scan_logs table not found — run SQL setup or use the engine locally:', error.message);
@@ -279,6 +297,8 @@ function switchScanTab(tab) {
   document.getElementById('tabUrl').classList.toggle('active', tab === 'url');
   document.getElementById('tabFile').classList.toggle('active', tab === 'file');
   document.getElementById('scanResult').innerHTML = '';
+  // Scroll to scan section
+  document.getElementById('scanSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function setUrl(url) { document.getElementById('urlInput').value = url; }
@@ -291,9 +311,12 @@ async function scanURL() {
   resultEl.innerHTML = `<div class="scanning-wrap"><div class="spinner"></div><div class="scanning-text">Scanning URL...</div></div>`;
   btn.disabled = true; btn.textContent = 'Scanning...';
   try {
+    resultEl.innerHTML = '<div class="scanning-wrap"><div class="spinner"></div><div class="scanning-text">Scanning... (first scan may take 30s to wake the engine)</div></div>';
     const r = await fetch(`${API_BASE}/scan/url`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(60000)
     });
     if (!r.ok) throw new Error('Server error ' + r.status);
     const data = await r.json();
@@ -321,7 +344,11 @@ async function scanFile(file) {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    const r = await fetch(`${API_BASE}/scan/file`, { method: 'POST', body: formData });
+    const r = await fetch(`${API_BASE}/scan/file`, {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(60000)
+    });
     if (!r.ok) throw new Error('Server error ' + r.status);
     const data = await r.json();
     resultEl.innerHTML = buildResultHTML(data, file.name, 'file');
@@ -406,3 +433,206 @@ async function saveScanToSupabase(type, target, data) {
   } catch(e) { console.log('Could not save scan to Supabase:', e); }
 }
 document.addEventListener('DOMContentLoaded', initDashboard);
+
+// ── Report Modal ──
+let _reportDays = 7;
+
+function openReportModal(e) {
+  if (e) e.preventDefault();
+  const modal = document.getElementById('reportModal');
+  modal.style.display = 'flex';
+  // Set default dates
+  const to   = new Date();
+  const from = new Date(Date.now() - 7 * 86400000);
+  document.getElementById('reportTo').value   = to.toISOString().split('T')[0];
+  document.getElementById('reportFrom').value = from.toISOString().split('T')[0];
+  if (window.innerWidth <= 768) { try { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('active'); } catch(e){} }
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').style.display = 'none';
+}
+
+function setReportPeriod(days, btn) {
+  _reportDays = days;
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.style.background = 'var(--bg2)';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--muted)';
+  });
+  btn.style.background   = 'rgba(0,229,255,0.1)';
+  btn.style.borderColor  = 'rgba(0,229,255,0.3)';
+  btn.style.color        = 'var(--accent)';
+  const to   = new Date();
+  const from = new Date(Date.now() - days * 86400000);
+  document.getElementById('reportTo').value   = to.toISOString().split('T')[0];
+  document.getElementById('reportFrom').value = from.toISOString().split('T')[0];
+}
+
+async function generateReport() {
+  const fromDate = new Date(document.getElementById('reportFrom').value + 'T00:00:00');
+  const toDate   = new Date(document.getElementById('reportTo').value   + 'T23:59:59');
+  const inclSummary = document.getElementById('rIncludeSummary').checked;
+  const inclScans   = document.getElementById('rIncludeScans').checked;
+  const inclThreats = document.getElementById('rIncludeThreats').checked;
+
+  const btn = document.querySelector('#reportModal button:last-child');
+  btn.textContent = '⏳ Generating...'; btn.disabled = true;
+
+  try {
+    // Filter scans by date range
+    const filtered = _allEvents.filter(e => {
+      const d = new Date(e.timestamp);
+      return d >= fromDate && d <= toDate;
+    });
+
+    const total  = filtered.length;
+    const allow  = filtered.filter(e => e.verdict === 'allow').length;
+    const warn   = filtered.filter(e => e.verdict === 'warn').length;
+    const block  = filtered.filter(e => e.verdict === 'block').length;
+    const threats = filtered.filter(e => e.verdict !== 'allow');
+
+    // Get user info
+    const { data: { session } } = await _supabase.auth.getSession();
+    const userName = session?.user?.user_metadata?.full_name || session?.user?.email || 'PDAS User';
+
+    // Build HTML report for printing
+    const fromStr = fromDate.toLocaleDateString();
+    const toStr   = toDate.toLocaleDateString();
+
+    let html = `
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>PDAS Security Report</title>
+<style>
+  @page { margin: 2cm; }
+  body { font-family: Arial, sans-serif; color: #1a1a2e; font-size: 12px; }
+  .header { border-bottom: 3px solid #00e5ff; padding-bottom: 1rem; margin-bottom: 1.5rem; display:flex; justify-content:space-between; align-items:flex-end; }
+  .logo { font-size: 1.8rem; font-weight: 900; color: #00e5ff; letter-spacing: 0.1em; }
+  .subtitle { font-size: 0.75rem; color: #666; }
+  .report-meta { text-align:right; font-size:0.75rem; color:#666; }
+  h2 { font-size: 1rem; color: #1a1a2e; border-left: 4px solid #00e5ff; padding-left: 0.5rem; margin: 1.5rem 0 0.75rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+  .stat-box { border: 1px solid #e0e0e0; border-radius: 8px; padding: 0.75rem; text-align: center; }
+  .stat-num { font-size: 1.8rem; font-weight: 900; }
+  .stat-label { font-size: 0.65rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem; }
+  .total  .stat-num { color: #00e5ff; }
+  .safe   .stat-num { color: #22c55e; }
+  .warn   .stat-num { color: #f59e0b; }
+  .danger .stat-num { color: #ef4444; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  th { background: #f5f5f5; padding: 0.5rem; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
+  td { padding: 0.45rem 0.5rem; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+  .v-safe   { background: #dcfce7; color: #166534; padding: 0.1rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.68rem; }
+  .v-warn   { background: #fef3c7; color: #92400e; padding: 0.1rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.68rem; }
+  .v-block  { background: #fee2e2; color: #991b1b; padding: 0.1rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.68rem; }
+  .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; font-size: 0.7rem; color: #999; text-align: center; }
+  .risk-bar-bg { background: #e0e0e0; border-radius: 4px; height: 6px; width: 80px; display:inline-block; vertical-align:middle; }
+  .risk-bar-fill { height: 100%; border-radius: 4px; }
+</style>
+</head><body>
+
+<div class="header">
+  <div>
+    <div class="logo">PDAS</div>
+    <div class="subtitle">Phishing Detection & Awareness System</div>
+    <div class="subtitle">Security Report — ${fromStr} to ${toStr}</div>
+  </div>
+  <div class="report-meta">
+    <div>Generated: ${new Date().toLocaleString()}</div>
+    <div>User: ${userName}</div>
+    <div>Total Records: ${total}</div>
+  </div>
+</div>`;
+
+    if (inclSummary) {
+      const safeRate  = total ? Math.round(allow/total*100) : 0;
+      const warnRate  = total ? Math.round(warn/total*100)  : 0;
+      const blockRate = total ? Math.round(block/total*100) : 0;
+      const highRisk  = filtered.filter(e => parseFloat(e.score) >= 80).length;
+      const avgScore  = total ? (filtered.reduce((s,e) => s + parseFloat(e.score||0), 0) / total).toFixed(1) : 0;
+      html += `
+<h2>📊 Summary Statistics</h2>
+<div class="stats-grid">
+  <div class="stat-box total"><div class="stat-num">${total}</div><div class="stat-label">Total Scans</div></div>
+  <div class="stat-box safe"><div class="stat-num">${allow}</div><div class="stat-label">Safe (${safeRate}%)</div></div>
+  <div class="stat-box warn"><div class="stat-num">${warn}</div><div class="stat-label">Suspicious (${warnRate}%)</div></div>
+  <div class="stat-box danger"><div class="stat-num">${block}</div><div class="stat-label">Blocked (${blockRate}%)</div></div>
+</div>
+<table style="margin-bottom:1.5rem;">
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Average Risk Score</td><td>${avgScore} / 100</td></tr>
+  <tr><td>High Risk Scans (≥80)</td><td>${highRisk}</td></tr>
+  <tr><td>URL Scans</td><td>${filtered.filter(e=>e.type==='url').length}</td></tr>
+  <tr><td>File Scans</td><td>${filtered.filter(e=>e.type==='file').length}</td></tr>
+  <tr><td>Report Period</td><td>${fromStr} — ${toStr}</td></tr>
+</table>`;
+    }
+
+    if (inclThreats && threats.length) {
+      html += `<h2>⚠️ Threats Detected (${threats.length})</h2>
+<table>
+  <tr><th>#</th><th>Target</th><th>Type</th><th>Score</th><th>Risk</th><th>Date</th></tr>
+  ${threats.slice(0,50).map((e,i) => {
+    const vClass = e.verdict === 'block' ? 'v-block' : 'v-warn';
+    const vLabel = e.verdict === 'block' ? 'DANGEROUS' : 'SUSPICIOUS';
+    const score = parseFloat(e.score||0);
+    const color = e.verdict === 'block' ? '#ef4444' : '#f59e0b';
+    const target = e.target.length > 60 ? e.target.slice(0,60)+'...' : e.target;
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-family:monospace;font-size:0.7rem;">${target}</td>
+      <td>${e.type}</td>
+      <td>
+        <span style="font-weight:700;">${score.toFixed(1)}</span>
+        <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:${score}%;background:${color};"></div></div>
+      </td>
+      <td><span class="${vClass}">${vLabel}</span></td>
+      <td>${new Date(e.timestamp).toLocaleDateString()}</td>
+    </tr>`;
+  }).join('')}
+</table>`;
+    }
+
+    if (inclScans && total > 0) {
+      const displayScans = inclThreats ? filtered.filter(e => e.verdict === 'allow') : filtered;
+      if (displayScans.length) {
+        html += `<h2>📋 ${inclThreats ? 'Safe Scans' : 'All Scans'} (${displayScans.length})</h2>
+<table>
+  <tr><th>#</th><th>Target</th><th>Type</th><th>Score</th><th>Verdict</th><th>Date</th></tr>
+  ${displayScans.slice(0,100).map((e,i) => {
+    const vClass = {allow:'v-safe',warn:'v-warn',block:'v-block'}[e.verdict]||'v-safe';
+    const vLabel = {allow:'SAFE',warn:'WARN',block:'BLOCK'}[e.verdict]||e.verdict;
+    const score = parseFloat(e.score||0);
+    const target = e.target.length > 55 ? e.target.slice(0,55)+'...' : e.target;
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-family:monospace;font-size:0.7rem;">${target}</td>
+      <td>${e.type}</td>
+      <td>${score.toFixed(1)}</td>
+      <td><span class="${vClass}">${vLabel}</span></td>
+      <td>${new Date(e.timestamp).toLocaleDateString()}</td>
+    </tr>`;
+  }).join('')}
+  ${displayScans.length > 100 ? `<tr><td colspan="6" style="text-align:center;color:#999;padding:0.5rem;">... and ${displayScans.length - 100} more records</td></tr>` : ''}
+</table>`;
+      }
+    }
+
+    html += `<div class="footer">
+      PDAS — Phishing Detection & Awareness System | Report generated on ${new Date().toLocaleString()} | Confidential
+    </div></body></html>`;
+
+    // Open print dialog
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
+
+    closeReportModal();
+  } catch(err) {
+    alert('Error generating report: ' + err.message);
+  }
+  btn.textContent = '📄 Download PDF Report'; btn.disabled = false;
+}

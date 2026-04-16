@@ -253,6 +253,14 @@
           </div>
           <button class="settings-btn-danger" onclick="signOutAll()">Sign Out All</button>
         </div>
+        <!-- Delete Company - only shown to company admins, sends request to super admin -->
+        <div class="danger-item" id="deleteCompanyRow" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
+          <div>
+            <div class="pref-label">Delete Company</div>
+            <div class="pref-sub">Request deletion — requires PDAS super admin approval</div>
+          </div>
+          <button class="settings-btn-danger" id="deleteCompanyBtn" onclick="requestDeleteCompany()">Request Deletion</button>
+        </div>
         <div class="danger-item" id="deleteAccountRow" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(239,68,68,0.15);">
           <div>
             <div class="pref-label">Delete Account</div>

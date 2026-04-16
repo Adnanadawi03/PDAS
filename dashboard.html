@@ -20,7 +20,7 @@
     <a href="#" class="nav-item"><span class="nav-icon">📧</span> Email Scans</a>
     <a href="#" class="nav-item"><span class="nav-icon">📎</span> File Scans</a>
     <a href="#" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
-    <a href="#" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    <a href="#" class="nav-item" onclick="openReportModal(event)"><span class="nav-icon">📈</span> Reports</a>
     <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
     <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Website</a>
   </nav>
@@ -205,5 +205,50 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<!-- REPORT MODAL -->
+<div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2rem;width:100%;max-width:480px;position:relative;">
+    <button onclick="closeReportModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;">✕</button>
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:0.4rem;">📊 Download Report</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;">Generate a PDF report of your scan activity</p>
+
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:0.06em;display:block;margin-bottom:0.4rem;">REPORT PERIOD</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <button onclick="setReportPeriod(7,this)" class="period-btn active" style="background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--accent);padding:0.6rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Last 7 days</button>
+        <button onclick="setReportPeriod(14,this)" class="period-btn" style="background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:0.6rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Last 14 days</button>
+        <button onclick="setReportPeriod(30,this)" class="period-btn" style="background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:0.6rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Last 30 days</button>
+        <button onclick="setReportPeriod(90,this)" class="period-btn" style="background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:0.6rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Last 90 days</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.2rem;">
+      <label style="font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:0.06em;display:block;margin-bottom:0.4rem;">OR CUSTOM RANGE</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div>
+          <label style="font-size:0.72rem;color:var(--muted);">From</label>
+          <input type="date" id="reportFrom" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.5rem;color:var(--text);font-size:0.82rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:var(--muted);">To</label>
+          <input type="date" id="reportTo" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.5rem;color:var(--text);font-size:0.82rem;outline:none;">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.5rem;">
+      <label style="font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:0.06em;display:block;margin-bottom:0.4rem;">INCLUDE IN REPORT</label>
+      <div style="display:flex;flex-direction:column;gap:0.4rem;">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="rIncludeSummary" checked style="accent-color:var(--accent);"> Summary statistics</label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="rIncludeScans" checked style="accent-color:var(--accent);"> Detailed scan list</label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="rIncludeThreats" checked style="accent-color:var(--accent);"> Threats only (High/Medium)</label>
+      </div>
+    </div>
+
+    <button onclick="generateReport()" style="width:100%;background:var(--accent);color:#000;border:none;padding:0.85rem;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;">📄 Download PDF Report</button>
+  </div>
+</div>
+
 </body>
 </html>

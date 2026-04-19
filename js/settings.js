@@ -439,8 +439,6 @@ async function leaveCompany() {
   loadCompanyInfo(session.user.id);
 }
 
-
-
 // ── Show delete company button for admins only ──
 async function checkAdminDeleteButton() {
   const { data: { session } } = await _supabase.auth.getSession();
@@ -543,5 +541,63 @@ async function requestDeleteCompany() {
     showMsg('profileMsg', '✓ Deletion request sent to super admin. Company stays active until approved.', 'success');
     const btn = document.getElementById('deleteCompanyBtn');
     if (btn) { btn.textContent = '⏳ Request Pending'; btn.disabled = true; btn.style.opacity = '0.6'; }
+  }
+}
+
+// ── Delete Company Request (admin only → super admin approval) ──
+async function checkAdminDeleteButton() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('role, companies(id, name, status)')
+    .eq('id', session.user.id)
+    .single();
+  const row = document.getElementById('deleteCompanyRow');
+  if (!row) return;
+  if (profile?.role === 'admin' && profile?.companies) {
+    row.style.display = 'flex';
+    const btn = document.getElementById('deleteCompanyBtn');
+    if (btn && profile.companies.status === 'deletion_requested') {
+      btn.textContent = '⏳ Request Pending';
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+    }
+  } else {
+    row.style.display = 'none';
+  }
+}
+
+async function requestDeleteCompany() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) { showMsg('profileMsg','Not logged in.','error'); return; }
+
+  const { data: profile, error: pErr } = await _supabase
+    .from('profiles')
+    .select('role, companies(id, name, status)')
+    .eq('id', session.user.id)
+    .single();
+
+  if (pErr || !profile) { showMsg('profileMsg','Could not load profile: '+(pErr?.message||''),'error'); return; }
+  if (profile.role !== 'admin') { showMsg('profileMsg','Only company admins can request deletion.','error'); return; }
+  if (!profile.companies) { showMsg('profileMsg','No company found.','error'); return; }
+  if (profile.companies.status === 'deletion_requested') {
+    showMsg('profileMsg','⏳ Deletion request already pending super admin approval.','success'); return;
+  }
+
+  const name = profile.companies.name;
+  if (!confirm('Request deletion of "'+name+'"?\n\n• Request sent to PDAS super admin\n• Company stays active until approved\n\nContinue?')) return;
+
+  const { error } = await _supabase
+    .from('companies')
+    .update({ status: 'deletion_requested' })
+    .eq('id', profile.companies.id);
+
+  if (error) {
+    showMsg('profileMsg','Error: '+error.message,'error');
+  } else {
+    showMsg('profileMsg','✓ Deletion request sent to super admin. Company stays active until approved.','success');
+    const btn = document.getElementById('deleteCompanyBtn');
+    if (btn) { btn.textContent='⏳ Request Pending'; btn.disabled=true; btn.style.opacity='0.6'; }
   }
 }

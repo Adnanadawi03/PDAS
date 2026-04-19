@@ -647,3 +647,47 @@ function goToFileScan(e) {
     try { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('active'); } catch(err){}
   }
 }
+
+// ── Auto-refresh: Supabase realtime + polling ──
+let _refreshInterval = null;
+let _realtimeChannel = null;
+
+async function startAutoRefresh() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+
+  // 1. Supabase realtime subscription — instant updates when new scan saved
+  _realtimeChannel = _supabase
+    .channel('scan_logs_changes')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'scan_logs', filter: `user_id=eq.${session.user.id}` },
+      async (payload) => {
+        console.log('[PDAS] New scan detected, refreshing...');
+        await loadAllData();
+        // Flash the stats to indicate update
+        document.querySelectorAll('.stat-num').forEach(el => {
+          el.style.transition = 'color 0.3s';
+          const orig = el.style.color;
+          el.style.color = 'var(--accent)';
+          setTimeout(() => el.style.color = orig, 500);
+        });
+      }
+    )
+    .subscribe();
+
+  // 2. Fallback polling every 30 seconds
+  _refreshInterval = setInterval(async () => {
+    await loadAllData();
+  }, 30000);
+}
+
+function stopAutoRefresh() {
+  if (_realtimeChannel) { _supabase.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+  if (_refreshInterval) { clearInterval(_refreshInterval); _refreshInterval = null; }
+}
+
+// Start auto-refresh when dashboard loads
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(startAutoRefresh, 2000); // Start after initial load
+});

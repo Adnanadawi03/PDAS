@@ -16,9 +16,9 @@
   <nav class="sidebar-nav">
     <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
     <a href="email-scans.html" class="nav-item active"><span class="nav-icon">📧</span> Email Scans</a>
-    <a href="#" class="nav-item"><span class="nav-icon">📎</span> File Scans</a>
-    <a href="#" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
-    <a href="#" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    <a href="dashboard.html" class="nav-item" onclick="sessionStorage.setItem("goFileScan","1")"><span class="nav-icon">📎</span> File Scans</a>
+    <a href="alerts.html" class="nav-item"><span class="nav-icon">🚨</span> Alerts</a>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
     <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
     <a href="index.html" class="nav-item"><span class="nav-icon">🌐</span> Website</a>
   </nav>
@@ -65,13 +65,13 @@
         <div style="font-size:1.3rem;margin-bottom:0.5rem;">📧</div>
         <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:0.3rem;">Gmail Add-on</div>
         <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Scans emails directly in Gmail</div>
-        <a href="https://script.google.com" target="_blank" style="display:block;text-align:center;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);color:var(--accent);padding:0.4rem;border-radius:8px;font-size:0.8rem;text-decoration:none;">Set Up Gmail →</a>
+        <a href="install-addon.html" style="display:block;text-align:center;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);color:var(--accent);padding:0.4rem;border-radius:8px;font-size:0.8rem;text-decoration:none;">Install Gmail Add-on →</a>
       </div>
       <div style="background:var(--bg2);border-radius:12px;padding:1.2rem;">
         <div style="font-size:1.3rem;margin-bottom:0.5rem;">📮</div>
         <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:0.3rem;">Outlook Add-in</div>
         <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Works with Outlook & Office 365</div>
-        <a href="email-addin.html" target="_blank" style="display:block;text-align:center;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);color:var(--accent);padding:0.4rem;border-radius:8px;font-size:0.8rem;text-decoration:none;">View Add-in →</a>
+        <a href="install-addon.html#outlook" style="display:block;text-align:center;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);color:var(--accent);padding:0.4rem;border-radius:8px;font-size:0.8rem;text-decoration:none;">Install Outlook Add-in →</a>
       </div>
     </div>
     <button onclick="document.getElementById('setupGuide').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;margin-top:0.75rem;">Hide setup guide</button>

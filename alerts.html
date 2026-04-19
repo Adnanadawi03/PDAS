@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDAS – Alerts</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">PDAS<span>.</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html"   class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="email-scans.html" class="nav-item"><span class="nav-icon">📧</span> Email Scans</a>
+    <a href="#"                class="nav-item" onclick="goFileScan(event)"><span class="nav-icon">📎</span> File Scans</a>
+    <a href="alerts.html"      class="nav-item active"><span class="nav-icon">🚨</span> Alerts</a>
+    <a href="#"                class="nav-item" onclick="openReport(event)"><span class="nav-icon">📈</span> Reports</a>
+    <a href="settings.html"    class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+    <a href="index.html"       class="nav-item"><span class="nav-icon">🌐</span> Website</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">?</div>
+      <div>
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role" id="userEmail"></div>
+      </div>
+    </div>
+    <button onclick="doLogout()" class="signout-btn">Sign Out</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div>
+        <h1 class="page-title">Security Alerts</h1>
+        <div class="page-sub">High and medium risk threats detected</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="notif-btn theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      <button class="scan-btn" onclick="loadAlerts()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="stats-grid" style="margin-bottom:1.5rem;">
+    <div class="stat-card danger"><div class="stat-label">Total Alerts</div><div class="stat-num danger" id="stAlerts">—</div></div>
+    <div class="stat-card danger"><div class="stat-label">High Risk (Blocked)</div><div class="stat-num danger" id="stBlock">—</div></div>
+    <div class="stat-card warn"><div class="stat-label">Medium Risk (Warn)</div><div class="stat-num warn" id="stWarn">—</div></div>
+    <div class="stat-card total"><div class="stat-label">Avg Risk Score</div><div class="stat-num total" id="stAvg">—</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      All Alerts
+      <span id="alertCount"></span>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+      <button class="filter-btn" onclick="setFilter(this,'block')">🚫 Dangerous</button>
+      <button class="filter-btn" onclick="setFilter(this,'warn')">⚠️ Suspicious</button>
+      <button class="filter-btn" onclick="setFilter(this,'email')">📧 Email</button>
+      <button class="filter-btn" onclick="setFilter(this,'url')">🔗 URL</button>
+      <button class="filter-btn" onclick="setFilter(this,'file')">📎 File</button>
+    </div>
+    <div id="alertsList"></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/theme.js"></script>
+<script>
+const _supabase = window.supabase.createClient(
+  'https://tzujckucxxmbxkpfkngn.supabase.co',
+  'sb_publishable_bmXeOrQV8w0DIkslpprzHg_SpmVydR1'
+);
+let _alerts = [], _filter = 'all';
+
+async function init() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) { window.location.href = 'login.html?msg=signin'; return; }
+  const user = session.user;
+  const name = user.user_metadata?.full_name || user.email.split('@')[0];
+  const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const avatarEl = document.getElementById('userAvatar');
+  const av = user.user_metadata?.avatar_url;
+  if (av && avatarEl) avatarEl.innerHTML = `<img src="${av}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  else if (avatarEl) avatarEl.textContent = initials;
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userEmail').textContent = user.email;
+  await loadAlerts();
+
+  // Realtime
+  _supabase.channel('alerts_rt')
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'scan_logs', filter:`user_id=eq.${session.user.id}` },
+      () => loadAlerts()
+    ).subscribe();
+}
+
+async function loadAlerts() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session) return;
+  const { data, error } = await _supabase
+    .from('scan_logs').select('*')
+    .eq('user_id', session.user.id)
+    .in('verdict', ['block', 'warn'])
+    .order('scanned_at', { ascending: false });
+
+  if (error || !data) {
+    document.getElementById('alertsList').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">No alerts yet. Great job staying safe! 🎉</div>';
+    return;
+  }
+  _alerts = data;
+
+  const block = data.filter(a => a.verdict === 'block').length;
+  const warn  = data.filter(a => a.verdict === 'warn').length;
+  const avg   = data.length ? (data.reduce((s,a)=>s+parseFloat(a.score||0),0)/data.length).toFixed(1) : '—';
+  document.getElementById('stAlerts').textContent = data.length;
+  document.getElementById('stBlock').textContent  = block;
+  document.getElementById('stWarn').textContent   = warn;
+  document.getElementById('stAvg').textContent    = avg;
+  document.getElementById('alertCount').textContent = data.length + ' alerts';
+  render(_filter);
+}
+
+function setFilter(btn, f) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _filter = f; render(f);
+}
+
+function render(f) {
+  let filtered = _alerts;
+  if (f === 'block' || f === 'warn') filtered = _alerts.filter(a => a.verdict === f);
+  else if (f === 'email' || f === 'url' || f === 'file') filtered = _alerts.filter(a => a.type === f);
+
+  const list = document.getElementById('alertsList');
+  if (!filtered.length) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;font-size:0.85rem;">No alerts in this category.</div>';
+    return;
+  }
+
+  const typeIcons  = { url:'🔗', file:'📄', email:'📧' };
+  const vIcons     = { block:'🚫', warn:'⚠️' };
+  const vColors    = { block:'#ef4444', warn:'#f59e0b' };
+  const riskLabel  = s => s >= 80 ? 'HIGH' : 'MEDIUM';
+  const riskColor  = s => s >= 80 ? '#ef4444' : '#f59e0b';
+
+  list.innerHTML = filtered.map(a => {
+    const score   = parseFloat(a.score || 0);
+    const time    = new Date(a.scanned_at).toLocaleString();
+    const signals = a.signals || {};
+    const subject = signals.subject || '';
+    const from    = signals.from || signals.sender || '';
+    const target  = a.target.length > 65 ? a.target.slice(0,65)+'…' : a.target;
+
+    return `<div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem;border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(${a.verdict==='block'?'239,68,68':'245,158,11'},0.1);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
+        ${vIcons[a.verdict]}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.2rem;flex-wrap:wrap;">
+          <span style="font-size:0.85rem;">${typeIcons[a.type]||'📋'}</span>
+          <span style="font-weight:600;font-size:0.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(target)}</span>
+        </div>
+        ${subject ? `<div style="font-size:0.78rem;color:var(--muted);">Subject: ${esc(subject)}</div>` : ''}
+        ${from ? `<div style="font-size:0.78rem;color:var(--muted);">From: ${esc(from)}</div>` : ''}
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">${time} · ${a.type.toUpperCase()}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:${riskColor(score)}">${score.toFixed(1)}</div>
+        <div style="font-size:0.65rem;font-weight:700;color:${riskColor(score)};letter-spacing:0.05em;">${riskLabel(score)} RISK</div>
+        <div style="font-size:0.7rem;margin-top:0.2rem;"><span style="background:rgba(${a.verdict==='block'?'239,68,68':'245,158,11'},0.12);color:${vColors[a.verdict]};padding:0.1rem 0.45rem;border-radius:4px;font-weight:700;">${a.verdict.toUpperCase()}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function goFileScan(e) { e.preventDefault(); window.location.href = 'dashboard.html#filescan'; }
+function openReport(e) { e.preventDefault(); window.location.href = 'dashboard.html#report'; }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('active'); }
+async function doLogout() { await _supabase.auth.signOut(); window.location.href = 'login.html'; }
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

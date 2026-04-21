@@ -106,33 +106,30 @@
     <div class="card">
       <div class="card-title" style="margin-bottom:1rem;">⚡ Quick Scan</div>
 
-      <!-- SCAN TABS -->
-      <div class="scan-tabs" style="margin-bottom:1.2rem;">
-        <button class="scan-tab active" id="tabUrl" onclick="switchScanTab('url')">🔗 URL</button>
-        <button class="scan-tab" id="tabFile" onclick="switchScanTab('file')">📎 File</button>
+      <!-- UNIFIED SCAN INPUT -->
+      <div class="url-input-wrap" style="margin-bottom:0.6rem;">
+        <span class="url-icon">🔗</span>
+        <input type="text" id="urlInput" placeholder="Paste URL to scan — e.g. https://suspicious-site.xyz" class="url-input" onkeydown="if(event.key==='Enter') scanURL()">
+        <button class="scan-go-btn" onclick="scanURL()" id="urlScanBtn">Scan →</button>
       </div>
-
-      <!-- URL INPUT -->
-      <div id="urlPanel">
-        <div class="url-input-wrap">
-          <span class="url-icon">🔗</span>
-          <input type="text" id="urlInput" placeholder="Paste URL to scan — e.g. https://suspicious-site.xyz" class="url-input" onkeydown="if(event.key==='Enter') scanURL()">
-          <button class="scan-go-btn" onclick="scanURL()" id="urlScanBtn">Scan →</button>
-        </div>
-        <div class="url-examples" style="margin-top:0.6rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+        <div class="url-examples" style="margin:0;">
           <span style="color:var(--muted);font-size:0.78rem;">Try:</span>
           <button class="example-btn" onclick="setUrl('http://paypa1.com/verify-account@user')">Phishing URL</button>
           <button class="example-btn" onclick="setUrl('https://google.com')">Safe URL</button>
         </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;">
+          <span style="color:var(--muted);font-size:0.78rem;">Or scan a file:</span>
+          <button onclick="document.getElementById('fileInput').click()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:0.35rem 0.85rem;border-radius:8px;cursor:pointer;font-size:0.8rem;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(0,229,255,0.4)'" onmouseout="this.style.borderColor='var(--border)'">📎 Upload File</button>
+          <input type="file" id="fileInput" style="display:none;" onchange="scanFile(this.files[0])">
+        </div>
       </div>
-
-      <!-- FILE INPUT -->
+      <!-- FILE DROP ZONE (hidden, shown on drag) -->
       <div id="filePanel" style="display:none;">
         <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
           <div class="drop-icon">📁</div>
           <div class="drop-text">Drop file here or <span style="color:var(--accent);">click to browse</span></div>
           <div class="drop-sub">PDF, EXE, DOCX, XLSX, ZIP — max 10MB</div>
-          <input type="file" id="fileInput" style="display:none;" onchange="scanFile(this.files[0])">
         </div>
       </div>
 

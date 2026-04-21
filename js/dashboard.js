@@ -292,13 +292,10 @@ function loadPlaceholderData() {
 
 // ── SCAN functions (inline in dashboard) ──
 function switchScanTab(tab) {
-  document.getElementById('urlPanel').style.display = tab === 'url' ? 'block' : 'none';
-  document.getElementById('filePanel').style.display = tab === 'file' ? 'block' : 'none';
-  document.getElementById('tabUrl').classList.toggle('active', tab === 'url');
-  document.getElementById('tabFile').classList.toggle('active', tab === 'file');
-  document.getElementById('scanResult').innerHTML = '';
-  // Scroll to scan section
+  // Tabs unified - just scroll to scan section
   document.getElementById('scanSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('scanResult').innerHTML = '';
+  if (tab === 'file') document.getElementById('fileInput').click();
 }
 
 function setUrl(url) { document.getElementById('urlInput').value = url; }
@@ -690,4 +687,18 @@ function stopAutoRefresh() {
 // Start auto-refresh when dashboard loads
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(startAutoRefresh, 2000); // Start after initial load
+});
+
+
+// ── Show drop zone on drag over page ──
+document.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  const fz = document.getElementById('filePanel');
+  if (fz) fz.style.display = 'block';
+});
+document.addEventListener('dragleave', function(e) {
+  if (!e.relatedTarget) {
+    const fz = document.getElementById('filePanel');
+    if (fz) fz.style.display = 'none';
+  }
 });

@@ -158,40 +158,54 @@ function buildHomepage(e) {
   );
 
   if (userId) {
-    // Logged in — show status
+    // Logged in — check if auto-scan trigger is active
     const lastScanStr = lastScan ? new Date(parseInt(lastScan)).toLocaleString() : 'Never';
+    const triggerActive = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'autoScanNewEmails');
+    const autoScanStatus = triggerActive ? '🟢 Every 5 minutes' : '🔴 Not active — click Enable below';
+
     card.addSection(
       CardService.newCardSection()
         .setHeader('✅ Connected')
         .addWidget(CardService.newTextParagraph().setText(
           '<b>User:</b> ' + userName + '<br>' +
-          '<b>Auto-scan:</b> Every 5 minutes<br>' +
+          '<b>Auto-scan:</b> ' + autoScanStatus + '<br>' +
           '<b>Last scan:</b> ' + lastScanStr
         ))
     );
 
-    card.addSection(
-      CardService.newCardSection()
-        .setHeader('Quick Actions')
-        .addWidget(CardService.newTextButton()
-          .setText('⚡ Scan All Recent Emails Now')
+    const actionsSection = CardService.newCardSection().setHeader('Quick Actions');
+
+    if (!triggerActive) {
+      actionsSection.addWidget(
+        CardService.newTextButton()
+          .setText('🔄 Enable Auto-Scan')
           .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-          .setBackgroundColor('#00e5ff')
-          .setOnClickAction(CardService.newAction().setFunctionName('manualScanAll'))
-        )
-        .addWidget(CardService.newTextButton()
-          .setText('📊 Open Dashboard')
-          .setOpenLink(CardService.newOpenLink().setUrl(WEBSITE_URL + '/dashboard.html'))
-        )
-        .addWidget(CardService.newTextButton()
-          .setText('📧 View Email Scans')
-          .setOpenLink(CardService.newOpenLink().setUrl(WEBSITE_URL + '/email-scans.html'))
-        )
-        .addWidget(CardService.newTextButton()
-          .setText('🔓 Sign Out')
-          .setOnClickAction(CardService.newAction().setFunctionName('signOut'))
-        )
-    );
+          .setBackgroundColor('#f59e0b')
+          .setOnClickAction(CardService.newAction().setFunctionName('enableAutoScan'))
+      );
+    }
+
+    actionsSection
+      .addWidget(CardService.newTextButton()
+        .setText('⚡ Scan All Recent Emails Now')
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setBackgroundColor('#00e5ff')
+        .setOnClickAction(CardService.newAction().setFunctionName('manualScanAll'))
+      )
+      .addWidget(CardService.newTextButton()
+        .setText('📊 Open Dashboard')
+        .setOpenLink(CardService.newOpenLink().setUrl(WEBSITE_URL + '/dashboard.html'))
+      )
+      .addWidget(CardService.newTextButton()
+        .setText('📧 View Email Scans')
+        .setOpenLink(CardService.newOpenLink().setUrl(WEBSITE_URL + '/email-scans.html'))
+      )
+      .addWidget(CardService.newTextButton()
+        .setText('🔓 Sign Out')
+        .setOnClickAction(CardService.newAction().setFunctionName('signOut'))
+      );
+
+    card.addSection(actionsSection);
   } else {
     card.addSection(
       CardService.newCardSection()
@@ -323,9 +337,15 @@ function signInPDAS(e) {
     props.setProperty('pdas_user_email',    email);
 
     // Auto-setup trigger on login
-    try { setupAutoScanTrigger(); } catch(err) {}
+    let triggerOk = false;
+    try { setupAutoScanTrigger(); triggerOk = true; } catch(err) {
+      Logger.log('[PDAS] Trigger setup failed: ' + err.message);
+    }
 
-    return buildMsg('✅ Signed in as ' + email + '!\n\nAuto-scan is now active. Every new email will be scanned automatically and results saved to your PDAS dashboard.');
+    const statusMsg = triggerOk
+      ? '✅ Signed in as ' + email + '!\n\n🔄 Auto-scan is now ACTIVE — emails will be scanned every 5 minutes automatically and results saved to your PDAS dashboard.'
+      : '✅ Signed in as ' + email + '!\n\n⚠️ Auto-scan needs one-time setup:\n1. Open Extensions → Apps Script\n2. Click Run → setupAutoScanTrigger\n3. Approve permissions when prompted\n\nOr click "⚡ Scan All Recent Emails Now" to scan manually.';
+    return buildMsg(statusMsg);
   } catch(err) {
     return buildMsg('❌ Error: ' + err.message);
   }
@@ -359,6 +379,15 @@ function scanEmail(e) {
     return buildResultCard(result.verdict, result.score, from, subject);
   } catch(err) {
     return buildMsg('❌ Scan error: ' + err.message);
+  }
+}
+
+function enableAutoScan(e) {
+  try {
+    setupAutoScanTrigger();
+    return buildMsg('✅ Auto-scan enabled!\n\nEmails will now be scanned every 5 minutes automatically. Results appear in your PDAS dashboard.');
+  } catch(err) {
+    return buildMsg('❌ Could not enable auto-scan: ' + err.message + '\n\nTry: Extensions → Apps Script → Run → setupAutoScanTrigger');
   }
 }
 

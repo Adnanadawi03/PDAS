@@ -429,7 +429,18 @@ async function saveScanToSupabase(type, target, data) {
     if (insertErr) console.warn('Could not save to scan_logs (run SQL setup):', insertErr.message);
   } catch(e) { console.log('Could not save scan to Supabase:', e); }
 }
-document.addEventListener('DOMContentLoaded', initDashboard);
+document.addEventListener('DOMContentLoaded', () => {
+  initDashboard();
+  // Open report modal if navigated from another page via Reports link
+  if (sessionStorage.getItem('goReport') === '1') {
+    sessionStorage.removeItem('goReport');
+    setTimeout(openReportModal, 800);
+  }
+  // Also handle #report hash in URL
+  if (window.location.hash === '#report') {
+    setTimeout(openReportModal, 800);
+  }
+});
 
 // ── Report Modal ──
 let _reportDays = 7;

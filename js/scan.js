@@ -42,28 +42,32 @@ async function checkAPIStatus() {
   el.className = 'api-status offline';
   txt.textContent = '⏳ Connecting to PDAS Engine…';
 
-  const tryFetch = (timeoutMs) =>
-    fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(timeoutMs) });
+  const attempts = [
+    { timeout: 6000,  message: '⏳ Connecting to PDAS Engine…' },
+    { timeout: 30000, message: '⏳ PDAS Engine is waking up, please wait…' },
+    { timeout: 30000, message: '⏳ Almost there, engine is still starting…' },
+  ];
 
-  try {
-    let r;
+  for (const attempt of attempts) {
+    txt.textContent = attempt.message;
     try {
-      r = await tryFetch(5000);
-    } catch {
-      txt.textContent = '⏳ PDAS Engine is waking up, please wait…';
-      r = await tryFetch(45000);
-    }
-
-    if (r.ok) {
-      el.className = 'api-status online';
-      txt.textContent = '✓ PDAS Engine is online and ready to scan';
-    } else {
-      throw new Error(`HTTP ${r.status}`);
-    }
-  } catch {
-    el.className = 'api-status offline';
-    txt.innerHTML = '✗ PDAS Engine is offline — <a href="#" onclick="showSetupGuide()" style="color:inherit;font-weight:600;">How to start it?</a>';
+      const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(attempt.timeout) });
+      if (r.ok) {
+        el.className = 'api-status online';
+        txt.textContent = '✓ PDAS Engine is online and ready to scan';
+        return;
+      }
+      // Got a response but non-ok — engine is reachable, treat as online
+      if (r.status < 500) {
+        el.className = 'api-status online';
+        txt.textContent = '✓ PDAS Engine is online and ready to scan';
+        return;
+      }
+    } catch { /* timeout or network error — try next attempt */ }
   }
+
+  el.className = 'api-status offline';
+  txt.innerHTML = '✗ PDAS Engine is offline — <a href="#" onclick="showSetupGuide()" style="color:inherit;font-weight:600;">How to start it?</a>';
 }
 
 function showSetupGuide() {

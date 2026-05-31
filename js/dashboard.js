@@ -72,49 +72,37 @@ async function checkAPIStatus() {
   const el = document.getElementById('apiStatus');
   const txt = document.getElementById('apiStatusText');
 
-  // Show a "waking up" state while we wait (Render free tier can take ~30–60s to cold-start)
   el.className = 'api-status offline';
   txt.textContent = '⏳ Connecting to PDAS Engine…';
 
-  const tryFetch = (timeoutMs) =>
-    fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(timeoutMs) });
+  const attempts = [
+    { timeout: 6000,  message: '⏳ Connecting to PDAS Engine…' },
+    { timeout: 30000, message: '⏳ PDAS Engine is waking up, please wait…' },
+    { timeout: 30000, message: '⏳ Almost there, engine is still starting…' },
+  ];
 
-  // Attempt 1 — quick check (6s)
-  try {
-    const r = await tryFetch(6000);
-    if (r.ok) {
-      el.className = 'api-status online';
-      txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
-      return;
-    }
-  } catch { /* cold start — keep going */ }
-
-  // Attempt 2 — engine is likely cold-starting, give it time
-  txt.textContent = '⏳ PDAS Engine is waking up, please wait…';
-  try {
-    const r = await tryFetch(30000);
-    if (r.ok) {
-      el.className = 'api-status online';
-      txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
-      return;
-    }
-  } catch { /* still starting — one more try */ }
-
-  // Attempt 3 — final long wait (Render can take up to 60s on cold start)
-  txt.textContent = '⏳ Almost there, engine is still starting…';
-  try {
-    const r = await tryFetch(30000);
-    if (r.ok) {
-      el.className = 'api-status online';
-      txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
-      return;
-    }
-    throw new Error(`HTTP ${r.status}`);
-  } catch {
-    // Only show offline after all 3 attempts (~66s total) have failed
-    el.className = 'api-status offline';
-    txt.textContent = '✗ PDAS Engine offline — scan history still available. Start engine to run new scans.';
+  for (const attempt of attempts) {
+    txt.textContent = attempt.message;
+    try {
+      const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(attempt.timeout) });
+      if (r.ok) {
+        el.className = 'api-status online';
+        txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
+        return;
+      }
+      // Got a response but non-ok status — engine is reachable, treat as online
+      // (e.g. 404 means no /health route but engine is running)
+      if (r.status < 500) {
+        el.className = 'api-status online';
+        txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
+        return;
+      }
+    } catch { /* timeout or network error — try next attempt */ }
   }
+
+  // All attempts failed — engine is truly offline
+  el.className = 'api-status offline';
+  txt.textContent = '✗ PDAS Engine offline — scan history still available. Start engine to run new scans.';
 }
 
 // ── Load data from Supabase (persistent storage) ──

@@ -72,31 +72,46 @@ async function checkAPIStatus() {
   const el = document.getElementById('apiStatus');
   const txt = document.getElementById('apiStatusText');
 
-  // Show a "waking up" state while we wait (Render free tier can take ~30s)
+  // Show a "waking up" state while we wait (Render free tier can take ~30–60s to cold-start)
   el.className = 'api-status offline';
   txt.textContent = '⏳ Connecting to PDAS Engine…';
 
   const tryFetch = (timeoutMs) =>
     fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(timeoutMs) });
 
+  // Attempt 1 — quick check (6s)
   try {
-    // First attempt — quick check (5s)
-    let r;
-    try {
-      r = await tryFetch(5000);
-    } catch {
-      // Cold start likely — wait and retry with a longer timeout (45s)
-      txt.textContent = '⏳ PDAS Engine is waking up, please wait…';
-      r = await tryFetch(45000);
-    }
-
+    const r = await tryFetch(6000);
     if (r.ok) {
       el.className = 'api-status online';
       txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
-    } else {
-      throw new Error(`HTTP ${r.status}`);
+      return;
     }
+  } catch { /* cold start — keep going */ }
+
+  // Attempt 2 — engine is likely cold-starting, give it time
+  txt.textContent = '⏳ PDAS Engine is waking up, please wait…';
+  try {
+    const r = await tryFetch(30000);
+    if (r.ok) {
+      el.className = 'api-status online';
+      txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
+      return;
+    }
+  } catch { /* still starting — one more try */ }
+
+  // Attempt 3 — final long wait (Render can take up to 60s on cold start)
+  txt.textContent = '⏳ Almost there, engine is still starting…';
+  try {
+    const r = await tryFetch(30000);
+    if (r.ok) {
+      el.className = 'api-status online';
+      txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
+      return;
+    }
+    throw new Error(`HTTP ${r.status}`);
   } catch {
+    // Only show offline after all 3 attempts (~66s total) have failed
     el.className = 'api-status offline';
     txt.textContent = '✗ PDAS Engine offline — scan history still available. Start engine to run new scans.';
   }

@@ -38,12 +38,28 @@ async function doLogout() {
 async function checkAPIStatus() {
   const el = document.getElementById('apiStatus');
   const txt = document.getElementById('apiStatusText');
+
+  el.className = 'api-status offline';
+  txt.textContent = '⏳ Connecting to PDAS Engine…';
+
+  const tryFetch = (timeoutMs) =>
+    fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(timeoutMs) });
+
   try {
-    const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(4000) });
+    let r;
+    try {
+      r = await tryFetch(5000);
+    } catch {
+      txt.textContent = '⏳ PDAS Engine is waking up, please wait…';
+      r = await tryFetch(45000);
+    }
+
     if (r.ok) {
       el.className = 'api-status online';
       txt.textContent = '✓ PDAS Engine is online and ready to scan';
-    } else { throw new Error(); }
+    } else {
+      throw new Error(`HTTP ${r.status}`);
+    }
   } catch {
     el.className = 'api-status offline';
     txt.innerHTML = '✗ PDAS Engine is offline — <a href="#" onclick="showSetupGuide()" style="color:inherit;font-weight:600;">How to start it?</a>';

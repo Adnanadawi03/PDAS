@@ -67,42 +67,12 @@ async function logout() {
   window.location.href = 'login.html';
 }
 
-// ── API Status (just checks if engine is online for scanning) ──
-async function checkAPIStatus() {
-  const el = document.getElementById('apiStatus');
+// ── API Status — assume online, only show error if a scan actually fails ──
+function checkAPIStatus() {
+  const el  = document.getElementById('apiStatus');
   const txt = document.getElementById('apiStatusText');
-
-  el.className = 'api-status offline';
-  txt.textContent = '⏳ Connecting to PDAS Engine…';
-
-  const attempts = [
-    { timeout: 6000,  message: '⏳ Connecting to PDAS Engine…' },
-    { timeout: 30000, message: '⏳ PDAS Engine is waking up, please wait…' },
-    { timeout: 30000, message: '⏳ Almost there, engine is still starting…' },
-  ];
-
-  for (const attempt of attempts) {
-    txt.textContent = attempt.message;
-    try {
-      const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(attempt.timeout) });
-      if (r.ok) {
-        el.className = 'api-status online';
-        txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
-        return;
-      }
-      // Got a response but non-ok status — engine is reachable, treat as online
-      // (e.g. 404 means no /health route but engine is running)
-      if (r.status < 500) {
-        el.className = 'api-status online';
-        txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
-        return;
-      }
-    } catch { /* timeout or network error — try next attempt */ }
-  }
-
-  // All attempts failed — engine is truly offline
-  el.className = 'api-status offline';
-  txt.textContent = '✗ PDAS Engine offline — scan history still available. Start engine to run new scans.';
+  el.className  = 'api-status online';
+  txt.textContent = '✓ PDAS Engine is online — ready to scan URLs and files';
 }
 
 // ── Load data from Supabase (persistent storage) ──
@@ -342,7 +312,7 @@ async function scanURL() {
     resultEl.innerHTML = buildResultHTML(data, url, 'url');
     await saveScanToSupabase('url', url, data);
     await loadAllData();
-  } catch (err) { resultEl.innerHTML = buildErrorHTML(err.message); }
+  } catch (err) { resultEl.innerHTML = buildErrorHTML(err.message); document.getElementById("apiStatus").className = "api-status offline"; document.getElementById("apiStatusText").textContent = "✗ PDAS Engine offline — scan history still available. Start engine to run new scans."; }
   btn.disabled = false; btn.textContent = 'Scan →';
 }
 
@@ -373,7 +343,7 @@ async function scanFile(file) {
     resultEl.innerHTML = buildResultHTML(data, file.name, 'file');
     await saveScanToSupabase('file', file.name, data);
     await loadAllData();
-  } catch (err) { resultEl.innerHTML = buildErrorHTML(err.message); }
+  } catch (err) { resultEl.innerHTML = buildErrorHTML(err.message); document.getElementById("apiStatus").className = "api-status offline"; document.getElementById("apiStatusText").textContent = "✗ PDAS Engine offline — scan history still available. Start engine to run new scans."; }
 }
 
 function buildResultHTML(data, target, type) {

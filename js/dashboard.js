@@ -129,6 +129,8 @@ async function loadAllData() {
     score: s.score,
     signals: s.signals,
     timestamp: s.scanned_at,
+    bypass_confirmed: s.bypass_confirmed,
+    bypassed_by: s.bypassed_by,
   }));
 
   _allEvents = events;

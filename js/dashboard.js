@@ -570,15 +570,43 @@ async function generateReport() {
     }
 
     if (inclThreats && threats.length) {
+      const bypasses = threats.filter(e => e.bypass_confirmed === true || e.signals?.bypass === true);
+      if (bypasses.length) {
+        html += `
+<h2 style="color:#ef4444;">🔓 Password-Confirmed Bypasses (${bypasses.length})</h2>
+<p style="font-size:0.78rem;color:#991b1b;background:#fee2e2;padding:0.6rem 0.8rem;border-radius:6px;margin-bottom:0.75rem;">
+  ⚠️ The following dangerous pages were accessed after the user verified their identity with their account password.
+</p>
+<table style="margin-bottom:1.5rem;">
+  <tr><th>#</th><th>Target</th><th>Score</th><th>Bypassed By</th><th>Date &amp; Time</th></tr>
+  ${bypasses.map((e,i) => {
+    const score = parseFloat(e.score||0);
+    const target = e.target.length > 55 ? e.target.slice(0,55)+'...' : e.target;
+    const bypassedBy = e.bypassed_by || 'Unknown';
+    const dt = new Date(e.timestamp||e.scanned_at);
+    return `<tr style="background:#fff5f5;">
+      <td>${i+1}</td>
+      <td style="font-family:monospace;font-size:0.7rem;">${target}</td>
+      <td><span style="font-weight:700;color:#ef4444;">${score.toFixed(1)}</span></td>
+      <td style="color:#991b1b;font-weight:600;">${bypassedBy}</td>
+      <td>${dt.toLocaleDateString()} ${dt.toLocaleTimeString()}</td>
+    </tr>`;
+  }).join('')}
+</table>`;
+      }
+
       html += `<h2>⚠️ Threats Detected (${threats.length})</h2>
 <table>
-  <tr><th>#</th><th>Target</th><th>Type</th><th>Score</th><th>Risk</th><th>Date</th></tr>
+  <tr><th>#</th><th>Target</th><th>Type</th><th>Score</th><th>Risk</th><th>Bypassed</th><th>Date</th></tr>
   ${threats.slice(0,50).map((e,i) => {
     const vClass = e.verdict === 'block' ? 'v-block' : 'v-warn';
     const vLabel = e.verdict === 'block' ? 'DANGEROUS' : 'SUSPICIOUS';
     const score = parseFloat(e.score||0);
     const color = e.verdict === 'block' ? '#ef4444' : '#f59e0b';
-    const target = e.target.length > 60 ? e.target.slice(0,60)+'...' : e.target;
+    const target = e.target.length > 55 ? e.target.slice(0,55)+'...' : e.target;
+    const bypassed = (e.bypass_confirmed === true || e.signals?.bypass === true)
+      ? `<span style="background:#fee2e2;color:#991b1b;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;font-size:0.68rem;">YES ✓PW</span>`
+      : `<span style="color:#ccc;font-size:0.7rem;">—</span>`;
     return `<tr>
       <td>${i+1}</td>
       <td style="font-family:monospace;font-size:0.7rem;">${target}</td>
@@ -588,7 +616,8 @@ async function generateReport() {
         <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:${score}%;background:${color};"></div></div>
       </td>
       <td><span class="${vClass}">${vLabel}</span></td>
-      <td>${new Date(e.timestamp).toLocaleDateString()}</td>
+      <td>${bypassed}</td>
+      <td>${new Date(e.timestamp||e.scanned_at).toLocaleDateString()}</td>
     </tr>`;
   }).join('')}
 </table>`;

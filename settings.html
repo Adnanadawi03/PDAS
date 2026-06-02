@@ -236,6 +236,34 @@
       </div>
     </div>
 
+    <!-- TRUSTED DOMAINS CARD -->
+    <div class="settings-card" style="grid-column: 1 / -1;">
+      <div class="settings-card-header">
+        <div class="settings-icon">✅</div>
+        <div>
+          <h3>Trusted Domains</h3>
+          <p>Domains you've permanently whitelisted in the PDAS browser extension</p>
+        </div>
+      </div>
+      <div class="settings-body">
+        <div id="trustedDomainsMsg" class="settings-msg" style="display:none;"></div>
+        <div id="trustedDomainsEmpty" style="display:none; text-align:center; padding:2rem 0; color:var(--muted); font-size:0.9rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">🛡️</div>
+          No trusted domains yet. When you trust a domain in the extension, it will appear here.
+        </div>
+        <div id="trustedDomainsList" style="display:none;">
+          <div style="font-size:0.78rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;margin-bottom:0.75rem;">WHITELISTED DOMAINS</div>
+          <div id="trustedDomainsRows"></div>
+          <div style="margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+            <button class="settings-btn-danger" style="width:auto; padding:0.55rem 1.2rem;" onclick="clearAllTrustedDomains()">🗑 Remove All</button>
+          </div>
+        </div>
+        <div id="trustedDomainsLoading" style="text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.88rem;">
+          Loading trusted domains...
+        </div>
+      </div>
+    </div>
+
     <!-- DANGER ZONE -->
     <div class="settings-card danger-card">
       <div class="settings-card-header">
@@ -368,5 +396,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (darkToggle) darkToggle.checked = !document.body.classList.contains('light');
 });
 </script>
+<script src="js/trusted-domains.js"></script>
 </body>
 </html>

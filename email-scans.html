@@ -40,7 +40,7 @@
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <div>
         <h1 class="page-title">Email Scans</h1>
-        <div class="page-sub">Results from Gmail & Outlook add-ins</div>
+        <div class="page-sub">Results from the Gmail add-on</div>
       </div>
     </div>
     <div class="topbar-right">
@@ -59,19 +59,13 @@
 
   <!-- SETUP GUIDE -->
   <div class="card" id="setupGuide" style="margin-bottom:1.5rem;border-color:rgba(0,229,255,0.2);">
-    <div class="card-title">📬 Set Up Email Add-ins</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
-      <div style="background:var(--bg2);border-radius:12px;padding:1.2rem;">
+    <div class="card-title">📬 Set Up Gmail Add-on</div>
+    <div style="margin-top:0.5rem;">
+      <div style="background:var(--bg2);border-radius:12px;padding:1.2rem;max-width:340px;">
         <div style="font-size:1.3rem;margin-bottom:0.5rem;">📧</div>
         <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:0.3rem;">Gmail Add-on</div>
         <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Scans emails directly in Gmail</div>
         <a href="install-addon.html" style="display:block;text-align:center;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);color:var(--accent);padding:0.4rem;border-radius:8px;font-size:0.8rem;text-decoration:none;">Install Gmail Add-on →</a>
-      </div>
-      <div style="background:var(--bg2);border-radius:12px;padding:1.2rem;">
-        <div style="font-size:1.3rem;margin-bottom:0.5rem;">📮</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:0.3rem;">Outlook Add-in</div>
-        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Works with Outlook & Office 365</div>
-        <a href="install-addon.html#outlook" style="display:block;text-align:center;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);color:var(--accent);padding:0.4rem;border-radius:8px;font-size:0.8rem;text-decoration:none;">Install Outlook Add-in →</a>
       </div>
     </div>
     <button onclick="document.getElementById('setupGuide').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;margin-top:0.75rem;">Hide setup guide</button>
@@ -137,7 +131,7 @@ async function loadEmailScans() {
     .order('scanned_at', { ascending: false });
 
   if (error) {
-    document.getElementById('emailList').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">No email scans yet. Set up the Gmail or Outlook add-in above.</div>';
+    document.getElementById('emailList').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">No email scans yet. Set up the Gmail add-on above.</div>';
     return;
   }
 
@@ -170,7 +164,7 @@ function renderScans(filter) {
   const list     = document.getElementById('emailList');
 
   if (!filtered.length) {
-    list.innerHTML = `<div style="color:var(--muted);text-align:center;padding:2rem;font-size:0.85rem;">${filter === 'all' ? 'No email scans yet. Set up the add-in to start scanning.' : 'No ' + filter + ' emails.'}</div>`;
+    list.innerHTML = `<div style="color:var(--muted);text-align:center;padding:2rem;font-size:0.85rem;">${filter === 'all' ? 'No email scans yet. Set up the Gmail add-on to start scanning.' : 'No ' + filter + ' emails.'}</div>`;
     return;
   }
 

@@ -1,39 +1,64 @@
 // ── Trusted Domains — Settings Page ──────────────────────────────────────────
-// Reads/writes chrome.storage.local via the PDAS extension content bridge.
-// Falls back to a "extension not detected" message if the extension isn't installed.
 
 (function () {
 
-  // ── Bridge: ask the extension for storage access ──────────────────────────
-  // The extension's content.js must forward these messages to background.js.
-  // If the extension isn't present the Promise times out and we show a notice.
+  // ── Wait for the extension content script to be ready ────────────────────
+  // content.js runs at document_idle which can be after DOMContentLoaded.
+  // We wait for the __pdas_ready CustomEvent (or flag) before sending any
+  // messages. If it never fires within 5s, the extension isn't installed.
 
+  function waitForBridge(timeoutMs) {
+    return new Promise((resolve) => {
+      // Already ready (e.g. script injected before this ran)
+      if (window.__pdas_ready) { resolve(true); return; }
+
+      const timer = setTimeout(() => {
+        window.removeEventListener('__pdas_ready', onReady);
+        resolve(false);
+      }, timeoutMs);
+
+      function onReady() {
+        clearTimeout(timer);
+        window.removeEventListener('__pdas_ready', onReady);
+        resolve(true);
+      }
+
+      window.addEventListener('__pdas_ready', onReady);
+    });
+  }
+
+  // ── Send a message to content.js and await its reply ─────────────────────
   function sendToExtension(msg) {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(null), 1500);
-      window.addEventListener('message', function handler(e) {
+      const timer = setTimeout(() => {
+        window.removeEventListener('message', handler);
+        resolve(null);
+      }, 3000);
+
+      function handler(e) {
         if (e.data && e.data.__pdas_reply === msg.type) {
           clearTimeout(timer);
           window.removeEventListener('message', handler);
           resolve(e.data.payload);
         }
-      });
+      }
+
+      window.addEventListener('message', handler);
       window.postMessage({ __pdas: true, ...msg }, '*');
     });
   }
 
   // ── DOM helpers ───────────────────────────────────────────────────────────
   function showState(state) {
-    // state: 'loading' | 'empty' | 'list' | 'unavailable'
-    document.getElementById('trustedDomainsLoading').style.display = state === 'loading'      ? '' : 'none';
-    document.getElementById('trustedDomainsEmpty').style.display   = state === 'empty'        ? '' : 'none';
-    document.getElementById('trustedDomainsList').style.display    = state === 'list'         ? '' : 'none';
+    document.getElementById('trustedDomainsLoading').style.display = state === 'loading' ? '' : 'none';
+    document.getElementById('trustedDomainsEmpty').style.display   = state === 'empty'   ? '' : 'none';
+    document.getElementById('trustedDomainsList').style.display    = state === 'list'    ? '' : 'none';
   }
 
   function showMsg(text, type) {
     const el = document.getElementById('trustedDomainsMsg');
-    el.textContent  = text;
-    el.className    = 'settings-msg ' + type;
+    el.textContent   = text;
+    el.className     = 'settings-msg ' + type;
     el.style.display = '';
     setTimeout(() => { el.style.display = 'none'; }, 3500);
   }
@@ -42,7 +67,6 @@
   function renderDomains(domains) {
     const container = document.getElementById('trustedDomainsRows');
     container.innerHTML = '';
-
     domains.forEach(function (domain) {
       const row = document.createElement('div');
       row.style.cssText = `
@@ -81,15 +105,27 @@
   // ── Load ──────────────────────────────────────────────────────────────────
   async function loadTrustedDomains() {
     showState('loading');
-    const result = await sendToExtension({ type: 'PDAS_GET_TRUSTED_DOMAINS' });
 
-    if (result === null) {
-      // Extension not detected — show inline notice instead of error
+    const bridgeReady = await waitForBridge(5000);
+
+    if (!bridgeReady) {
       showState('empty');
       document.getElementById('trustedDomainsEmpty').innerHTML = `
         <div style="font-size:2rem;margin-bottom:0.5rem;">🔌</div>
         PDAS extension not detected.<br>
         <span style="font-size:0.8rem;">Install the extension and reload this page to manage trusted domains.</span>
+      `;
+      return;
+    }
+
+    const result = await sendToExtension({ type: 'PDAS_GET_TRUSTED_DOMAINS' });
+
+    if (result === null) {
+      showState('empty');
+      document.getElementById('trustedDomainsEmpty').innerHTML = `
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+        Could not read trusted domains.<br>
+        <span style="font-size:0.8rem;">Try reloading the page.</span>
       `;
       return;
     }
@@ -107,7 +143,7 @@
   window.removeTrustedDomain = async function (domain) {
     const result = await sendToExtension({ type: 'PDAS_REMOVE_TRUSTED_DOMAIN', domain });
     if (result === null) { showMsg('Extension not reachable.', 'error'); return; }
-    showMsg('✓ ' + domain + ' removed from trusted domains.', 'success');
+    showMsg('✓ ' + domain + ' removed.', 'success');
     loadTrustedDomains();
   };
 
@@ -120,7 +156,7 @@
     loadTrustedDomains();
   };
 
-  // ── Init on DOMContentLoaded ──────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', loadTrustedDomains);
 
 })();

@@ -63,13 +63,12 @@ async function loadDashboardData() {
   if (error) { console.error('Error loading employees:', error); }
   _employees = employees || [];
 
-  // Load scan logs
+  // Load scan logs — no limit so stats are accurate
   const { data: scans } = await _supabase
     .from('scan_logs')
     .select('*')
     .eq('company_id', _company.id)
-    .order('scanned_at', { ascending: false })
-    .limit(200);
+    .order('scanned_at', { ascending: false });
   _allScans = scans || [];
 
   updateStats();
@@ -77,14 +76,15 @@ async function loadDashboardData() {
   renderPendingRequests();
   renderThreatFeed();
   renderFullEmployeeTable();
-  renderAllScans(_allScans, 'all');
+  populateEmpFilterSelect();
+  applyFiltersAndRender();
   renderAlerts();
 }
 
 function updateStats() {
   const active = _employees.filter(e => e.status === 'active').length;
   const pending = _employees.filter(e => e.status === 'pending').length;
-  const threats = _allScans.filter(s => s.verdict !== 'allow').length;
+  const threats = _allScans.filter(s => s.verdict === 'warn').length;
   const blocked = _allScans.filter(s => s.verdict === 'block').length;
 
   document.getElementById('statEmployees').textContent = active;
@@ -238,35 +238,201 @@ function renderFullEmployeeTable() {
 }
 
 let _scansFilter = 'all';
+let _empFilter = 'all';
+
+// Populate employee dropdown after data loads
+function populateEmpFilterSelect() {
+  const sel = document.getElementById('empFilterSelect');
+  if (!sel) return;
+  // Keep first "All Employees" option, rebuild the rest
+  sel.innerHTML = '<option value="all">👥 All Employees</option>';
+  _employees.filter(e => e.status === 'active').forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.id;
+    opt.textContent = e.full_name || e.email || 'Unknown';
+    sel.appendChild(opt);
+  });
+}
+
+function applyEmployeeFilter() {
+  const sel = document.getElementById('empFilterSelect');
+  _empFilter = sel ? sel.value : 'all';
+  applyFiltersAndRender();
+}
+
 function filterScans(btn, filter) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   _scansFilter = filter;
-  renderAllScans(_allScans, filter);
+  applyFiltersAndRender();
 }
-function renderAllScans(scans, filter) {
-  const filtered = filter === 'all' ? scans : scans.filter(s => s.verdict === filter);
+
+function applyFiltersAndRender() {
+  let scans = _allScans;
+  if (_empFilter !== 'all') scans = scans.filter(s => s.user_id === _empFilter);
+  if (_scansFilter !== 'all') scans = scans.filter(s => s.verdict === _scansFilter);
+  renderAllScans(scans);
+}
+
+function renderAllScans(scans) {
   const count = document.getElementById('allScansCount');
-  if (count) count.textContent = filtered.length + ' scans';
+  if (count) count.textContent = scans.length + ' scans';
   const body = document.getElementById('allScansBody');
   if (!body) return;
   const empMap = {};
   _employees.forEach(e => empMap[e.id] = e.full_name || 'Unknown');
   const verdictClass = { allow:'badge-low', warn:'badge-med', block:'badge-high' };
   const verdictLabel = { allow:'SAFE', warn:'WARN', block:'BLOCK' };
-  if (!filtered.length) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">No scans found.</td></tr>'; return; }
-  body.innerHTML = filtered.slice(0,50).map(s => {
-    const target = s.target.length>40 ? s.target.slice(0,40)+'…' : s.target;
+  if (!scans.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1.5rem;">No scans found.</td></tr>'; return; }
+  body.innerHTML = scans.slice(0, 100).map(s => {
+    const target = s.target.length > 40 ? s.target.slice(0, 40) + '…' : s.target;
     const time = new Date(s.scanned_at).toLocaleString();
+    const rules = (s.signals && s.signals.rules) ? s.signals.rules : {};
+    const reasonTags = Object.keys(rules).filter(k => rules[k] === true)
+      .map(k => `<span style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:0.1rem 0.4rem;border-radius:4px;font-size:0.68rem;white-space:nowrap;">${k.replace(/_/g,' ')}</span>`).join(' ');
+    const reasonCell = reasonTags || `<span style="color:var(--muted);font-size:0.75rem;">—</span>`;
     return `<tr>
-      <td style="font-size:0.82rem;">${empMap[s.user_id]||'Unknown'}</td>
-      <td class="email-cell">${s.type==='url'?'🔗':'📄'} ${target}</td>
+      <td style="font-size:0.82rem;">${empMap[s.user_id] || 'Unknown'}</td>
+      <td class="email-cell">${s.type === 'url' ? '🔗' : '📄'} ${target}</td>
       <td style="color:var(--muted);font-size:0.78rem;">${s.type}</td>
       <td style="font-family:'Syne',sans-serif;font-weight:700;color:${s.verdict==='block'?'#ef4444':s.verdict==='warn'?'#f59e0b':'#22c55e'}">${s.score}</td>
-      <td><span class="risk-badge ${verdictClass[s.verdict]||''}">${verdictLabel[s.verdict]||s.verdict}</span></td>
+      <td><span class="risk-badge ${verdictClass[s.verdict] || ''}">${verdictLabel[s.verdict] || s.verdict}</span></td>
+      <td style="max-width:200px;line-height:1.6;">${reasonCell}</td>
       <td style="color:var(--muted);font-size:0.78rem;">${time}</td>
     </tr>`;
   }).join('');
+}
+
+function downloadScansReport() {
+  if (!_company) return;
+
+  const empMap = {};
+  _employees.forEach(e => empMap[e.id] = e.full_name || e.email || 'Unknown');
+
+  let scans = _allScans;
+  let empLabel = 'All Employees';
+  if (_empFilter !== 'all') {
+    scans = scans.filter(s => s.user_id === _empFilter);
+    const emp = _employees.find(e => e.id === _empFilter);
+    empLabel = emp ? (emp.full_name || emp.email || 'Unknown') : 'Unknown';
+  }
+  if (_scansFilter !== 'all') scans = scans.filter(s => s.verdict === _scansFilter);
+
+  const totalScans = scans.length;
+  const safe       = scans.filter(s => s.verdict === 'allow').length;
+  const suspicious = scans.filter(s => s.verdict === 'warn').length;
+  const blocked    = scans.filter(s => s.verdict === 'block').length;
+  const avgScore   = totalScans ? (scans.reduce((a,s) => a + (s.score||0), 0) / totalScans).toFixed(1) : 0;
+  const highRisk   = scans.filter(s => s.score >= 80).length;
+  const urlScans   = scans.filter(s => s.type === 'url').length;
+  const fileScans  = scans.filter(s => s.type === 'file').length;
+  const now        = new Date().toLocaleString();
+  const dateStr    = new Date().toISOString().slice(0, 10);
+
+  // Build scan rows
+  const rows = scans.map(s => {
+    const emp    = empMap[s.user_id] || 'Unknown';
+    const target = (s.target || '').length > 55 ? s.target.slice(0,55)+'…' : (s.target||'');
+    const time   = new Date(s.scanned_at).toLocaleString();
+    const rules  = (s.signals && s.signals.rules) ? s.signals.rules : {};
+    const reasons = Object.keys(rules).filter(k => rules[k] === true).map(k => k.replace(/_/g,' ')).join(', ') || '—';
+    const vColor = s.verdict==='block' ? '#ef4444' : s.verdict==='warn' ? '#f59e0b' : '#22c55e';
+    const vLabel = s.verdict==='block' ? 'BLOCK' : s.verdict==='warn' ? 'WARN' : 'SAFE';
+    return `<tr>
+      <td>${emp}</td>
+      <td style="word-break:break-all;">${s.type==='url'?'🔗':'📄'} ${target}</td>
+      <td style="text-align:center;">${s.type}</td>
+      <td style="text-align:center;font-weight:700;color:${vColor};">${s.score}</td>
+      <td style="text-align:center;"><span style="background:${s.verdict==='block'?'rgba(239,68,68,0.12)':s.verdict==='warn'?'rgba(245,158,11,0.12)':'rgba(34,197,94,0.12)'};color:${vColor};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;">${vLabel}</span></td>
+      <td style="font-size:9px;color:#666;">${reasons}</td>
+      <td style="font-size:9px;color:#666;">${time}</td>
+    </tr>`;
+  }).join('');
+
+  const safeP = totalScans ? Math.round(safe/totalScans*100) : 0;
+  const warnP = totalScans ? Math.round(suspicious/totalScans*100) : 0;
+  const blkP  = totalScans ? Math.round(blocked/totalScans*100) : 0;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PDAS Security Report</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background:#fff; color:#1a1a2e; padding:32px; font-size:12px; }
+  .header { text-align:center; margin-bottom:28px; }
+  .logo { font-size:28px; font-weight:900; color:#00e5ff; letter-spacing:0.12em; }
+  .logo span { color:#1a1a2e; }
+  .subtitle { font-size:12px; color:#666; margin-top:4px; letter-spacing:0.05em; }
+  .report-title { font-size:16px; font-weight:700; color:#1a1a2e; margin-top:10px; }
+  .meta { font-size:11px; color:#888; margin-top:4px; }
+  .divider { border:none; border-top:2px solid #00e5ff; margin:18px 0; }
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .stat-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; text-align:center; }
+  .stat-num { font-size:26px; font-weight:900; color:#1a1a2e; line-height:1; }
+  .stat-num.safe  { color:#22c55e; }
+  .stat-num.warn  { color:#f59e0b; }
+  .stat-num.block { color:#ef4444; }
+  .stat-label { font-size:10px; color:#888; margin-top:5px; text-transform:uppercase; letter-spacing:0.06em; }
+  .section-title { font-size:13px; font-weight:700; color:#1a1a2e; margin-bottom:10px; padding-left:8px; border-left:3px solid #00e5ff; }
+  .metrics-table { width:100%; border-collapse:collapse; margin-bottom:22px; }
+  .metrics-table td { padding:7px 12px; border-bottom:1px solid #f0f0f0; font-size:11px; }
+  .metrics-table td:first-child { color:#888; }
+  .metrics-table td:last-child { font-weight:600; text-align:right; }
+  .scan-table { width:100%; border-collapse:collapse; margin-bottom:22px; font-size:10px; }
+  .scan-table th { background:#1a1a2e; color:#fff; padding:7px 8px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:0.05em; }
+  .scan-table th:first-child { border-radius:6px 0 0 6px; }
+  .scan-table th:last-child { border-radius:0 6px 6px 0; }
+  .scan-table td { padding:6px 8px; border-bottom:1px solid #f4f4f8; vertical-align:middle; }
+  .scan-table tr:nth-child(even) td { background:#fafafa; }
+  .footer { text-align:center; font-size:9px; color:#aaa; margin-top:16px; padding-top:12px; border-top:1px solid #eee; }
+  @media print { body { padding:20px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">PDAS<span style="color:#00e5ff;font-size:14px;font-weight:400;display:block;letter-spacing:0.06em;">Phishing Detection &amp; Awareness System</span></div>
+    <div class="report-title">Security Report</div>
+    <div class="meta">Employee: ${empLabel} &nbsp;|&nbsp; Generated: ${now} &nbsp;|&nbsp; Company: ${_company.name}</div>
+    <div class="meta">Total Records: ${totalScans}</div>
+  </div>
+  <hr class="divider">
+
+  <div class="section-title">📊 Summary Statistics</div>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-num">${totalScans}</div><div class="stat-label">Total Scans</div></div>
+    <div class="stat-box"><div class="stat-num safe">${safe}</div><div class="stat-label">Safe (${safeP}%)</div></div>
+    <div class="stat-box"><div class="stat-num warn">${suspicious}</div><div class="stat-label">Suspicious (${warnP}%)</div></div>
+    <div class="stat-box"><div class="stat-num block">${blocked}</div><div class="stat-label">Blocked (${blkP}%)</div></div>
+  </div>
+
+  <table class="metrics-table">
+    <tr><td>METRIC</td><td>VALUE</td></tr>
+    <tr><td>Average Risk Score</td><td>${avgScore} / 100</td></tr>
+    <tr><td>High Risk Scans (≥80)</td><td>${highRisk}</td></tr>
+    <tr><td>URL Scans</td><td>${urlScans}</td></tr>
+    <tr><td>File Scans</td><td>${fileScans}</td></tr>
+  </table>
+
+  ${totalScans > 0 ? `
+  <div class="section-title">🔍 Scan Details</div>
+  <table class="scan-table">
+    <thead><tr>
+      <th>Employee</th><th>Target</th><th>Type</th><th>Score</th><th>Verdict</th><th>Reasons</th><th>Time</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>` : '<div style="text-align:center;color:#aaa;padding:2rem;">No scan records for this period.</div>'}
+
+  <div class="footer">PDAS — Phishing Detection &amp; Awareness System &nbsp;|&nbsp; Report generated on ${now} &nbsp;|&nbsp; Confidential</div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 400);
 }
 
 function renderAlerts() {

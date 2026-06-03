@@ -115,15 +115,21 @@
   <div id="section-scans" style="display:none;">
     <div class="card">
       <div class="card-title">All Company Scans <span id="allScansCount"></span></div>
-      <div class="filter-bar">
+      <div class="filter-bar" style="flex-wrap:wrap;gap:0.5rem;align-items:center;">
         <button class="filter-btn active" onclick="filterScans(this,'all')">All</button>
         <button class="filter-btn" onclick="filterScans(this,'block')">Dangerous</button>
         <button class="filter-btn" onclick="filterScans(this,'warn')">Suspicious</button>
         <button class="filter-btn" onclick="filterScans(this,'allow')">Safe</button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <select id="empFilterSelect" onchange="applyEmployeeFilter()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:0.4rem 0.75rem;border-radius:8px;font-size:0.82rem;cursor:pointer;font-family:inherit;">
+            <option value="all">👥 All Employees</option>
+          </select>
+          <button onclick="downloadScansReport()" style="display:flex;align-items:center;gap:0.4rem;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);color:var(--accent);padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;font-family:inherit;white-space:nowrap;">⬇ Download Report</button>
+        </div>
       </div>
       <table class="scan-table">
-        <thead><tr><th>Employee</th><th>Target</th><th>Type</th><th>Score</th><th>Verdict</th><th>Time</th></tr></thead>
-        <tbody id="allScansBody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">Loading...</td></tr></tbody>
+        <thead><tr><th>Employee</th><th>Target</th><th>Type</th><th>Score</th><th>Verdict</th><th>Reasons</th><th>Time</th></tr></thead>
+        <tbody id="allScansBody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1.5rem;">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
